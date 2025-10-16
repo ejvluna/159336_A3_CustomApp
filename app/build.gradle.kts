@@ -1,6 +1,17 @@
+// app/build.gradle.kts
+
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
+}
+
+// Configure the Secrets Gradle Plugin
+secrets {
+    // This is the default, but it's good to be explicit
+    propertiesFileName = "secrets.properties"
 }
 
 android {
@@ -41,10 +52,7 @@ android {
 
     buildFeatures {
         compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
+        buildConfig = true
     }
 
     packaging {
@@ -67,10 +75,25 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.activity.compose)
 
+    // ViewModel & StateFlow
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
     // Network
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging)
+
+    // Room Database
+    implementation(libs.room.runtime)
+    implementation(libs.room.ktx)
+    ksp(libs.room.compiler)
+
+    // Coroutines
+    implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.kotlinx.coroutines.core)
+
+    // Gson
+    implementation(libs.gson)
 
     // Debug
     debugImplementation(libs.androidx.compose.ui.tooling)

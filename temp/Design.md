@@ -10,37 +10,50 @@
 
 **Development Language**: Kotlin
 
-**Architecture Pattern**: MVVM (Model-View-ViewModel) with Clean Architecture principles[2][5][1]
+**Architecture Pattern**: MVVM (Model-View-ViewModel) with Jetpack Compose[2][5][1]
 
 ***
 
-## Scope
+## Core Functionality
 
-this is not meant to be a production-grade app, just a prototype. The app would use Android's networking libraries (Retrofit or similar) to make HTTP requests to your chosen API. The API response would be parsed and displayed in a user-friendly format.
+The app provides fact-checking capabilities by analyzing user-submitted claims against trusted information sources:
 
-Android Integration
-The Sonar API uses a simple REST interface compatible with OpenAI's format, making it straightforward to integrate into Android using standard HTTP libraries like Retrofit or OkHttp. You'll make POST requests with your user's claim as the message content and receive AI-generated, cited responses from only your trusted sources.
+**User Input**
+- User enters a claim or statement to verify (up to 500 characters)
 
-This approach perfectly aligns with your coursework requirements: functional prototype scope, educational focus, fact-checking capability, and leverages AI for intelligent responses rather than raw search results
+**Fact-Checking Process**
+1. App sends claim to Perplexity's Sonar API with pre-defined trusted domain filters
+2. API performs web research across trusted sources (news, encyclopedias, academic, fact-checking organizations, government/scientific)
+3. API returns detailed analysis with citations
+
+**Results Display**
+- **Overall Rating**: MOSTLY_TRUE, MIXED, or MOSTLY_FALSE (color-coded indicator)
+- **Summary**: Brief overview of fact-checking findings
+- **Detailed Analysis**: Explanation of the verification result
+- **Citations**: List of sources with URLs used for verification
+- **Action**: User can start a new query or view history
+
+**History & Persistence**
+- All queries and results are saved to local database
+- Users can view past queries with timestamps
+- Users can delete queries from history
+
+***
 
 ## System Architecture
 
 ### Layer Structure
 
-Your app will follow a three-layer architecture that aligns with Android best practices:[5][1][2]
+Your app will follow a two-layer architecture optimized for MVP simplicity:[5][1][2]
 
 **1. Presentation Layer (UI)**
-- Activities and Fragments
+- Activity with Jetpack Compose
+- Composables for UI screens
 - ViewModels
 - UI State management
 - User input handling
 
-**2. Domain Layer (Business Logic)**
-- Use Cases / Interactors
-- Domain models
-- Business rules
-
-**3. Data Layer**
+**2. Data Layer**
 - Repository pattern
 - API service interface
 - Local database (Room) for history
@@ -52,29 +65,23 @@ Your app will follow a three-layer architecture that aligns with Android best pr
 
 ### Core Components (Within 10-Class Limit)
 
-**1. MainActivity** - Entry point and navigation controller[9][1]
+**1. `MainActivity`** - Entry point with Compose UI[9][1]
 
-**2. QueryInputFragment** - User interface for entering claims to verify[1]
+**2. `QueryViewModel`** - Manages UI state and coordinates verification requests[2][1]
 
-**3. ResultDisplayFragment** - Shows verification results with citations[1]
+**3. `PerplexityRepository`** - Handles all API interactions and data operations[5][2]
 
-**4. HistoryFragment** - Displays previously checked claims[1]
+**4. `SonarApiService`** - Retrofit interface for Perplexity API calls[2]
 
-**5. QueryViewModel** - Manages UI state and coordinates verification requests[2][1]
+**5. `ClaimHistoryDao`** - Room database interface for local storage[2]
 
-**6. VerifyClaimUseCase** - Orchestrates the fact-checking workflow[3][4]
-
-**7. PerplexityRepository** - Handles all API interactions and data operations[5][2]
-
-**8. SonarApiService** - Retrofit interface for Perplexity API calls[2]
-
-**9. ClaimHistoryDao** - Room database interface for local storage[2]
-
-**10. AppDatabase** - Room database instance[2]
+**6. `AppDatabase`** - Room database instance[2]
 
 **Excluded from count** (as per assignment rules):[9]
-- Data classes: `ClaimQuery`, `VerificationResult`, `ClaimHistoryEntity`, `SonarApiRequest`, `SonarApiResponse`
-- Configuration classes: Theme and dependency injection setup
+- Data classes: `VerificationResult`, `ClaimHistoryEntity`, `SonarApiRequest`, `SonarApiResponse`
+- Composable functions (UI screens)
+- Extension functions and mappers
+- Configuration classes: Theme setup
 
 ***
 
@@ -82,10 +89,9 @@ Your app will follow a three-layer architecture that aligns with Android best pr
 
 ### User Input Flow
 
-1. User enters claim/query in `QueryInputFragment`[1]
+1. User enters claim/query in Compose UI[1]
 2. Input captured and passed to `QueryViewModel`[1][2]
-3. ViewModel triggers `VerifyClaimUseCase`[4][3]
-4. UseCase calls `PerplexityRepository.verifyQuery()`[5]
+3. ViewModel calls `PerplexityRepository.verifyQuery()`[5]
 
 ### API Request Flow
 
@@ -100,11 +106,11 @@ Your app will follow a three-layer architecture that aligns with Android best pr
 ### Response Processing Flow
 
 1. API returns JSON response with verification result and citations[10]
-2. Repository maps response to domain model `VerificationResult`[5]
+2. Repository maps response to `VerificationResult` data class[5]
 3. Repository saves to local database via `ClaimHistoryDao`[2]
-4. Result returned to UseCase, then ViewModel[3]
-5. ViewModel updates UI state LiveData/StateFlow[1][2]
-6. Fragment observes state and displays results[1]
+4. Result returned to ViewModel[3]
+5. ViewModel updates UI state via StateFlow[1][2]
+6. Composable observes state and displays results[1]
 
 ***
 
@@ -113,63 +119,29 @@ Your app will follow a three-layer architecture that aligns with Android best pr
 ### 1. Presentation Layer
 
 **MainActivity**
-- Single Activity architecture with Navigation Component[1]
+- Single Activity with Jetpack Compose[1]
 - Bottom navigation for Query, History tabs
-- Handles fragment transactions
+- Hosts all Composable screens
 - Manages app-level UI state
 
-**QueryInputFragment**
-- Material Design text input field
-- Submit button
-- Loading indicator
-- Error state handling
-- Input validation (non-empty, character limits)
-
-**ResultDisplayFragment**
-- Scrollable result display
-- Formatted verification text
-- Citation list with source links
-- Credibility indicator
-- Share functionality
-- Save to favorites option
-
-**HistoryFragment**
-- RecyclerView of past queries
-- Click to view full results
-- Swipe to delete
-- Search/filter functionality
+**Composable Screens** (not counted as classes)
+- `QueryInputScreen`: Material Design text input, submit button, loading indicator, error handling, input validation
+- `ResultDisplayScreen`: Scrollable result display, formatted verification text, citation list with links, credibility indicator, new query button
+- `HistoryScreen`: List of past queries, click to view full results, swipe to delete, search/filter functionality
 
 **QueryViewModel**
 - Holds UI state using StateFlow[2][1]
 - States: Idle, Loading, Success, Error
-- Triggers use case execution
-- Transforms domain data to UI models
+- Calls repository directly for verification requests
+- Transforms data to UI models
 - Survives configuration changes[6]
 
 ***
 
-### 2. Domain Layer
-
-**VerifyClaimUseCase**
-- Single responsibility: verify one claim[4][3]
-- `operator fun invoke(query: String): Flow<Result<VerificationResult>>`
-- Coordinates repository calls
-- Handles business logic errors
-- Pure Kotlin with no Android dependencies[5]
-
-**Domain Models**
-- `ClaimQuery`: Represents user input
-- `VerificationResult`: Contains verification outcome, summary, citations, confidence score
-- `Citation`: Source title, URL, relevance
-- `TrustedSource`: Domain configuration
-
-***
-
-### 3. Data Layer
+### 2. Data Layer
 
 **PerplexityRepository**
 - Single source of truth pattern[5][2]
-- Implements Repository interface defined in domain layer[5]
 - Methods:
     - `suspend fun verifyQuery(query: String): VerificationResult`
     - `suspend fun getHistory(): List<VerificationResult>`
@@ -272,12 +244,12 @@ You can configure these in a Constants file and easily modify them.[11]
 **Core Android**
 - Kotlin 1.9+
 - Android SDK (minSdk 24, targetSdk 34)
+- Jetpack Compose (UI framework)
 - Material Design 3 components
 
 **Architecture Components**[2][1]
 - ViewModel
-- LiveData / StateFlow
-- Navigation Component
+- StateFlow
 - Room Database
 
 **Networking**[2]
@@ -285,41 +257,34 @@ You can configure these in a Constants file and easily modify them.[11]
 - OkHttp 3
 - Gson / Moshi for JSON parsing
 
-**Dependency Injection**[3]
-- Hilt (optional but recommended)
-
 **Asynchronous Programming**[6][2]
 - Kotlin Coroutines
 - Flow
 
-**Testing**[5]
-- JUnit 4/5
-- Mockito
-- Espresso (UI tests)
 
 ***
 
-## User Interface Design
+## User Interface Design (Jetpack Compose)
 
 ### Screen 1: Query Input
-- Large text input area with hint: "Enter a claim or statement to verify..."
-- Character counter (suggest 500 char limit)
+- Large text input field with hint: "Enter a claim or statement to verify..."
+- Character counter (500 char limit)
 - Primary action button: "Verify Claim"
-- Loading spinner during API call
-- Material Design card elevation
+- Loading indicator during API call
+- Material Design 3 styling
 
 ### Screen 2: Results Display
 - Top section: Overall verification status (True/False/Partially True/Unverifiable)
 - Color-coded indicator (green/red/yellow/gray)
 - Main content: AI-generated explanation
-- Expandable citations section
-- Action buttons: Share, Save, New Query
+- Citations section with source links
+- Action button: New Query
 
 ### Screen 3: History
-- List of past queries with timestamp
+- LazyColumn list of past queries with timestamp
 - Preview of result status
 - Tap to view full details
-- Swipe actions for delete
+- Swipe to delete functionality
 
 ***
 
@@ -356,44 +321,12 @@ data class ClaimHistoryEntity(
     val status: String, // VERIFIED, DISPUTED, UNVERIFIABLE
     val citations: String, // JSON array
     val timestamp: Long,
-    val isFavorite: Boolean = false
 )
 ```
 
 ***
 
-## Implementation Phases
 
-**Phase 1: Setup & UI** (Days 1-2)
-- Create project structure
-- Implement basic UI layouts
-- Setup navigation
-- Configure dependencies
-
-**Phase 2: API Integration** (Days 3-4)
-- Implement Retrofit service
-- Create repository
-- Test API calls with mock data
-- Handle responses
-
-**Phase 3: Core Logic** (Days 5-6)
-- Implement ViewModel
-- Create use case
-- Wire up data flow
-- Add error handling
-
-**Phase 4: Database & History** (Day 7)
-- Setup Room database
-- Implement history feature
-- Add persistence
-
-**Phase 5: Polish & Testing** (Day 8)
-- UI refinements
-- Add loading states
-- Test edge cases
-- Code comments for submission[9]
-
-***
 
 ## Key Design Decisions
 
@@ -411,7 +344,7 @@ data class ClaimHistoryEntity(
 
 ## Assignment Compliance
 
-**Class Count**: 10 classes (within individual limit)[9]
+**Class Count**: 6 classes (within individual limit)[9]
 
 **Originality**: All code written specifically for this assignment[9]
 
@@ -431,10 +364,26 @@ data class ClaimHistoryEntity(
 2. **Add dependencies** to build.gradle files
 3. **Obtain Perplexity API key** from their platform[14]
 4. **Define your trusted sources list** in a constants file
-5. **Implement base architecture** (Activity, Fragments, ViewModel)
+5. **Implement base architecture** (Activity, Composables, ViewModel)
 6. **Build Repository and API service** following the specifications above
 7. **Test API integration** with simple queries
-8. **Implement UI components** and wire everything together
+8. **Implement Compose screens** and wire everything together
 9. **Add database layer** for history functionality
 10. **Polish and comment code** for submission[9]
 
+This architecture provides a solid foundation for your prototype while staying within the assignment constraints and demonstrating professional Android development practices.[1][5][9][2]
+
+[1](https://developer.android.com/topic/architecture)
+[2](https://developer.android.com/topic/architecture/recommendations)
+[3](https://proandroiddev.com/a-flexible-modern-android-app-architecture-complete-step-by-step-d76901e29993)
+[4](https://cekrem.github.io/posts/a-use-case-for-usecases-in-kotlin/)
+[5](https://cesarmauri.com/a-clean-architecture-implementation-for-android-in-kotlin/)
+[6](https://stackoverflow.com/questions/61295883/common-app-state-architecture-for-java-kotlin-android-apps)
+[7](https://blog.octo.com/a-responsive-and-clean-android-app-with-kotlin-actors)
+[8](https://proandroiddev.com/how-to-architect-android-apps-a-deep-dive-into-principles-not-rules-2f1eb7f26402)
+[9](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/28284446/31c10c91-2d4e-4106-88b0-99eefcc809d9/Instructions.md)
+[10](https://www.perplexity.ai/hub/blog/introducing-the-sonar-pro-api)
+[11](https://docs.perplexity.ai/guides/search-domain-filters)
+[12](https://docs.perplexity.ai/getting-started/quickstart)
+[13](https://thetradable.com/ai/perplexity-adds-domain-filters-to-search-api-ig--m)
+[14](https://www.youtube.com/watch?v=o8euh5GkUzg)
