@@ -1,6 +1,11 @@
+// Import the required packages for naming the app and activity
 package com.example.customapp
 
+// Import the required packages for the app theme and activity
 import com.example.customapp.ui.theme.CustomAppTheme
+import com.example.customapp.ui.QueryInputScreenFull
+import com.example.customapp.ui.HistoryScreenFull
+import com.example.customapp.data.model.VerificationResult
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -10,18 +15,19 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.History
 import androidx.compose.runtime.*
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Alignment
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import androidx.compose.ui.unit.dp
 
+// Define the main activity class
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             CustomAppTheme {
-                // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
@@ -33,15 +39,64 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+// Define the custom app composable function
 @Composable
 fun CustomApp() {
-    var claim by remember { mutableStateOf("") }
-    var isVerifying by remember { mutableStateOf(false) }
-    var result by remember { mutableStateOf<String?>(null) }
-    
-    // Create a coroutine scope tied to this composable
-    val scope = rememberCoroutineScope()
+    var selectedScreen by remember { mutableStateOf(Screen.QUERY) }
+    var historyList by remember { mutableStateOf<List<VerificationResult>>(emptyList()) }
 
+    Scaffold(
+        bottomBar = {
+            NavigationBar {
+                NavigationBarItem(
+                    icon = { Icon(Icons.Filled.Search, contentDescription = "Query") },
+                    label = { Text("Verify") },
+                    selected = selectedScreen == Screen.QUERY,
+                    onClick = { selectedScreen = Screen.QUERY }
+                )
+                NavigationBarItem(
+                    icon = { Icon(Icons.Filled.History, contentDescription = "History") },
+                    label = { Text("History") },
+                    selected = selectedScreen == Screen.HISTORY,
+                    onClick = { selectedScreen = Screen.HISTORY }
+                )
+            }
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when (selectedScreen) {
+                Screen.QUERY -> QueryInputScreenFull(
+                    onSubmit = { query ->
+                        // Handle query submission
+                    }
+                )
+                Screen.HISTORY -> HistoryScreenFull(
+                    historyList = historyList,
+                    onItemClick = { result ->
+                        // Handle item click
+                    },
+                    onDelete = { id ->
+                        // Handle delete
+                    }
+                )
+            }
+        }
+    }
+}
+
+// Define the screen enum class: the different screens of the app
+enum class Screen {
+    QUERY,
+    HISTORY
+}
+
+// Define the query input screen composable function
+@Composable
+fun QueryInputScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -50,55 +105,27 @@ fun CustomApp() {
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = "Truthiness Checker",
+            text = "Verify a Claim",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 32.dp)
         )
+        Text("Query input screen placeholder")
+    }
+}
 
-        OutlinedTextField(
-            value = claim,
-            onValueChange = { claim = it },
-            label = { Text("Enter a claim to verify") },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isVerifying
+// Define the history screen composable function
+@Composable
+fun HistoryScreen() {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Verification History",
+            style = MaterialTheme.typography.headlineMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
         )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = {
-                isVerifying = true
-                // Launch a coroutine in the scope
-                scope.launch {
-                    // Simulate API call with a delay
-                    delay(1000)
-                    result = "This is a sample response. In a real app, this would come from the API."
-                    isVerifying = false
-                }
-            },
-            enabled = claim.isNotBlank() && !isVerifying
-        ) {
-            if (isVerifying) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Verifying...")
-            } else {
-                Text("Verify Claim")
-            }
-        }
-
-        result?.let {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "Result:",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = it)
-        }
+        Text("History screen placeholder")
     }
 }
