@@ -81,7 +81,11 @@ dependencies {
     // Network
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
+
+    // Compose Material Icons
+    implementation(libs.androidx.compose.material.icons.extended)
 
     // Room Database
     implementation(libs.room.runtime)
