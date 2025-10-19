@@ -1,3 +1,4 @@
+// /config/TrustedSources.kt
 package com.example.customapp.config
 
 /**
@@ -16,7 +17,6 @@ object TrustedSources {
 
         // Encyclopedias
         "britannica.com",
-        "wikipedia.org",
 
         // Fact-checkers
         "snopes.com",

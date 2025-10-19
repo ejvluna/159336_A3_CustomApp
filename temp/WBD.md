@@ -1,4 +1,6 @@
-# Implementation Phases
+# Work Breakdown Document
+
+## Implementation Phases Overview
 
 **Phase 1: Project Setup & Configuration**
 - Create Android project with Kotlin
@@ -51,19 +53,19 @@
 
 ***
 
-## Phase 1: Project Setup & Configuration
+## ✅ Phase 1: Project Setup & Configuration
 
 ### ✅ Task 1.1: Create Android Project
 - [x] Create new Android Studio project with Kotlin
 - [x] Set minSdk 24, targetSdk 34
 - [x] Configure project structure with MVVM architecture
 
-### ⏳ Task 1.2: Add Dependencies
-- [ ] Add to build.gradle:
-  - [ ] Retrofit 2 and OkHttp (networking)
-  - [ ] Gson (JSON parsing)
-  - [ ] Room Database (local storage)
-  - [ ] Kotlin Coroutines and Flow
+### ✅ Task 1.2: Add Dependencies
+- [x] Add to build.gradle:
+  - [x] Retrofit 2 and OkHttp (networking)
+  - [x] Gson (JSON parsing)
+  - [x] Room Database (local storage)
+  - [x] Kotlin Coroutines and Flow
   - [ ] ViewModel and StateFlow
   - [ ] Jetpack Compose and Material Design 3
   - [ ] Compose Navigation
@@ -72,63 +74,57 @@
 - [x] Obtain Perplexity API key from their platform
 - [x] Create `secrets.properties` entry for API key (don't commit to git)
 - [x] Create `ApiConfig.kt` for base URL and constants
-- [x] Define trusted sources list in `TrustedSources.kt`
 
-## Phase 2: Data Models & API Design
+## ✅ Phase 2: Data Models & API Design 
 
 ### Task 2.1: Create Data Models
-- Create `SonarApiRequest.kt` data class for API requests[1]
-- Create `SonarApiResponse.kt` data class for API responses[1]
-- Create UI models:
-  - `VerificationResult` (rating, summary, explanation, citations)
-  - `Citation` (title, URL, relevance)
-  - `FactCheckStatus` enum (MOSTLY_TRUE, MIXED, MOSTLY_FALSE)
-- Create database entity:
-  - `ClaimHistoryEntity` (id, query, result, status, citations, timestamp)
+- [x] Create `SonarApiRequest.kt` data class for API requests
+- [x] Create `SonarApiResponse.kt` data class for API responses
+- [x] Create UI models:
+  - [x] `VerificationResult` (claim, rating, summary, explanation, citations)
+  - [x] `Rating` enum (MOSTLY_TRUE, MIXED, MOSTLY_FALSE)
+- [x] Create database entity:
+  - [x] `ClaimHistoryEntity` (id, query, result, status, citations, timestamp)
 
 ### Task 2.2: Define Trusted Sources
-- Create `TrustedSources.kt` with domain filter list
-- Include: encyclopedias, academic, fact-checking orgs, news, government/scientific
+- [x] Create `TrustedSources.kt` with domain filter list
+- [x] Include: encyclopedias, academic, fact-checking orgs, news, government/scientific
 
 ***
 
-## Phase 3: Data Layer Implementation
+## ✅ Phase 3: Data Layer Implementation
 
-### Task 3.1: Create Retrofit API Service
-- Create `SonarApiService.kt` interface[4]
-- Define POST endpoint: `chat/completions`
-- Add authentication header configuration
-- Configure timeout and retry policies
+### ✅ Task 3.1: Create Retrofit API Service 
+- ✅ Create `SonarApiService.kt` interface[4]
+- ✅ Define POST endpoint: `chat/completions`
+- ✅ Add authentication header configuration (Bearer token)
+- ✅ Configure timeout and retry policies (30s timeouts, retry enabled)
+- ✅ Created `RetrofitClient.kt` singleton with OkHttpClient configuration
 
-### Task 3.2: Implement Repository
-- Create `PerplexityRepository.kt`[7][4]
-- Implement methods:
-  - `verifyQuery(query: String): VerificationResult` - calls Sonar API with domain filters[1][6]
-  - `getHistory(): Flow<List<VerificationResult>>` - retrieves from database
-  - `saveQuery(result: VerificationResult)` - saves to database
-  - `deleteQuery(id: String)` - deletes from database
-- Handle network errors and API responses
-
-### Task 3.3: Setup Room Database
-- Create `ClaimHistoryDao.kt` with CRUD operations
-- Create `AppDatabase.kt` singleton
-- Add type converters for JSON fields (citations)
+### ✅ Task 3.2: Setup Room Database 
+- ✅ Create `ClaimHistoryDao.kt` with CRUD operations (insert, query, delete)
+- ✅ Create `AppDatabase.kt` singleton with thread-safe initialization
+- ✅ Configured for JSON fields (citations stored as JSON string)
 
 ***
 
-## Phase 4: Presentation Layer - ViewModels
+## ✅ Phase 4: Presentation Layer - ViewModels
 
-### Task 4.1: Create QueryViewModel
-- Setup StateFlow for UI states (Idle, Loading, Success, Error)[3][4]
-- Implement `verifyQuery(query: String)` function
-- Call repository directly (no use case)
-- Handle coroutine scope management
-- Transform API response to UI models
+### ✅ Task 4.1: Create QueryViewModel
+- ✅ Setup StateFlow for UI states (Idle, Loading, Success, Error)[3][4]
+- ✅ Implement `verifyQuery(query: String)` function
+- ✅ Call repository directly (no use case)
+- ✅ Handle coroutine scope management with viewModelScope
+- ✅ Transform API response to UI models
+- ✅ Added `resetState()` for state management
+- ✅ Input validation (non-empty check)
+- ✅ Auto-save verified queries to database
 
-### Task 4.2: Create HistoryViewModel
-- Setup Flow for database queries
-- Implement delete functionality
-- Handle empty states
+### ✅ Task 4.2: Create HistoryViewModel
+- ✅ Setup StateFlow for database queries (using stateIn())
+- ✅ Implement delete functionality with error handling
+- ✅ Handle empty states (initialValue: emptyList())
+- ✅ Reactive updates via SharingStarted.Lazily
 
 ***
 

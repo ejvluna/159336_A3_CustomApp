@@ -14,8 +14,7 @@ the Android platform and play nicely with other apps (for example, releasing res
   receive 0 marks and it may be reported to the university's academic integrity office.
 - You may use external libraries, but list them clearly in your comments. You may not use a complete third-party framework (for
   example, a full game engine).
-- Class limit: Individual submissions — maximum 10 Kotlin classes. Group submissions — maximum 20 Kotlin classes. Apps that
-  exceed these limits will receive 0 marks. This rule is intended to discourage copying apps from online sources.
+- Class limit: Individual submissions — maximum 10 Kotlin classes. Group submissions — maximum 20 Kotlin classes. Apps that exceed these limits will receive 0 marks. This rule is intended to discourage copying apps from online sources.
     - The class limit excludes simple data classes (with no methods), theme classes, factory classes, database entities, or
       library classes provided as Gradle dependencies (i.e., not copied into the src directory).
     - If you believe you need more than the allowed classes, email the instructor to request an exemption.
@@ -79,3 +78,21 @@ the Android platform and play nicely with other apps (for example, releasing res
 ### Ownership and Marks
 - All rights to the app belong to you (or your group). You are free to publish it to the Google Play Store if you wish.
 - This assignment is worth 30% of the total marks for the course.
+
+
+## Additional Information from Discord
+
+Hi, I have a question about the assignment requirement regarding the 10-class limit.
+
+For data classes, I don’t put any methods inside them, but I do use extension functions (e.g., for domain ↔ data mapping). Since the methods are not defined directly inside the data classes, do these still count toward the 10-class limit?
+
+Also, do UseCase count as part of the 10 classes, or are they considered outside of this restriction (like data classes, entities, or theme classes)?
+
+if I have separate data classes for the domain layer, data layer, and UI layer, and then write mappers for them, how would this be counted? As 0 classes (since they’re simple data classes), as 1 class, or as 3 classes?
+
+To clarify, apart from these cases, the restriction only applies to Kotlin classes, while other files (e.g., composables, extensions, etc.) are not limited — is that correct?
+
+Thanks!
+[8:24 pm]Martin Johnson: I would say that you probably don't need a domain layer. This layer is optional and only required by quite complex apps. If you have UseCase classes with only an invoke method that wouldn't count against your 10 classes but I would recommend most people to use a simpler architecture with only a UI layer and data layer.
+
+The composables and any extension functions don't count as classes.

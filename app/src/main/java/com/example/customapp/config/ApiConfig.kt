@@ -1,4 +1,4 @@
-// ApiConfig.kt
+// /config/ApiConfig.kt
 package com.example.customapp.config
 
 import com.example.customapp.BuildConfig
@@ -26,6 +26,7 @@ object ApiConfig {
     const val DEFAULT_TEMPERATURE = 0.2f
     const val DEFAULT_MAX_TOKENS = 1000
 
+    // Search domain filter (set by TrustedSources.kt)
     val DEFAULT_SEARCH_DOMAIN_FILTER: List<String>
         get() = TrustedSources.DOMAINS
 }
