@@ -1,9 +1,10 @@
 // /config/ApiConfig.kt
 package com.example.customapp.config
 
+// Import required packages to access API key from BuildConfig
 import com.example.customapp.BuildConfig
 
-
+// Configuration object for API settings
 object ApiConfig {
     // Base URL for Perplexity API
     const val BASE_URL = "https://api.perplexity.ai/"

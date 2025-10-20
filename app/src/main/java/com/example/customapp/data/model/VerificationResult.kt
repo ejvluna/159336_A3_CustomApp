@@ -1,7 +1,7 @@
 // data/model/VerificationResult.kt
 package com.example.customapp.data.model
 
-// Data class to represent the result of a verification
+// Data class to encapsulate the various fields of a verification result (query result)
 data class VerificationResult(
     val claim: String,
     val rating: Rating,
@@ -11,8 +11,9 @@ data class VerificationResult(
 ) {
     // Enum class to represent the available ratings for a verification result
     enum class Rating {
-        MOSTLY_TRUE,
-        MIXED,
-        MOSTLY_FALSE
+        TRUE,
+        FALSE,
+        MISLEADING,
+        UNABLE_TO_VERIFY
     }
 }

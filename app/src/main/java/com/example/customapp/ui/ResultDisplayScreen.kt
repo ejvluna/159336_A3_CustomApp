@@ -1,7 +1,6 @@
 // ui/ResultDisplayScreen.kt
 package com.example.customapp.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.ui.Alignment
 import com.example.customapp.data.model.VerificationResult
 import androidx.compose.ui.tooling.preview.Preview
@@ -140,20 +140,25 @@ fun ResultDisplayScreen(
 @Composable
 fun StatusIndicator(rating: VerificationResult.Rating) {
     val (icon, color, label) = when (rating) {
-        VerificationResult.Rating.MOSTLY_TRUE -> Triple(
+        VerificationResult.Rating.TRUE -> Triple(
             Icons.Filled.CheckCircle,
             Color(0xFF4CAF50),
             "Mostly True"
         )
-        VerificationResult.Rating.MIXED -> Triple(
-            Icons.Filled.Warning,
-            Color(0xFFFFC107),
-            "Mixed"
-        )
-        VerificationResult.Rating.MOSTLY_FALSE -> Triple(
+        VerificationResult.Rating.FALSE -> Triple(
             Icons.Filled.Close,
             Color(0xFFF44336),
             "Mostly False"
+        )
+        VerificationResult.Rating.MISLEADING -> Triple(
+            Icons.Filled.Warning,
+            Color(0xFFFFA000),  // Orange
+            "Misleading"
+        )
+        VerificationResult.Rating.UNABLE_TO_VERIFY -> Triple(
+            Icons.Filled.Info,
+            Color(0xFF9E9E9E),  // Grey
+            "Unable to Verify"
         )
     }
 
@@ -192,7 +197,7 @@ fun ResultDisplayScreenPreviewTrue() {
         ResultDisplayScreen(
             result = VerificationResult(
                 claim = "The Earth is round",
-                rating = VerificationResult.Rating.MOSTLY_TRUE,
+                rating = VerificationResult.Rating.TRUE,
                 summary = "This claim is supported by scientific evidence and observations.",
                 explanation = "The spherical shape of the Earth has been confirmed through multiple methods including satellite imagery, physics, and direct observation. This is one of the most well-established facts in science.",
                 citations = listOf(
@@ -207,13 +212,33 @@ fun ResultDisplayScreenPreviewTrue() {
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun ResultDisplayScreenPreviewMixed() {
+fun ResultDisplayScreenPreviewFalse() {
+    CustomAppTheme {
+        ResultDisplayScreen(
+            result = VerificationResult(
+                claim = "Vaccines cause autism",
+                rating = VerificationResult.Rating.FALSE,
+                summary = "This claim is false. Multiple large-scale studies have found no link between vaccines and autism.",
+                explanation = "The original study claiming a vaccine-autism link has been thoroughly discredited and retracted. Numerous subsequent studies involving millions of children have found no connection between vaccines and autism. The scientific consensus is clear that vaccines do not cause autism.",
+                citations = listOf(
+                    "https://www.cdc.gov/vaccinesafety/concerns/autism.html",
+                    "https://www.who.int/news-room/fact-sheets/detail/immunization-vaccines-and-biologicals"
+                )
+            ),
+            onNewQuery = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun ResultDisplayScreenPreviewMisleading() {
     CustomAppTheme {
         ResultDisplayScreen(
             result = VerificationResult(
                 claim = "Coffee is bad for your health",
-                rating = VerificationResult.Rating.MIXED,
-                summary = "This claim is partially true. While excessive coffee consumption can have negative effects, moderate consumption has been shown to have health benefits.",
+                rating = VerificationResult.Rating.MISLEADING,
+                summary = "This claim is misleading. While excessive coffee consumption can have negative effects, moderate consumption has been shown to have health benefits.",
                 explanation = "Research shows that moderate coffee consumption (3-5 cups per day) is associated with various health benefits, including reduced risk of certain diseases. However, excessive consumption can lead to anxiety, sleep issues, and other problems. The health effects depend on individual factors and consumption amount.",
                 citations = listOf(
                     "https://www.healthline.com/nutrition/coffee-health-benefits",
@@ -227,17 +252,17 @@ fun ResultDisplayScreenPreviewMixed() {
 
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
-fun ResultDisplayScreenPreviewFalse() {
+fun ResultDisplayScreenPreviewUnableToVerify() {
     CustomAppTheme {
         ResultDisplayScreen(
             result = VerificationResult(
-                claim = "Vaccines cause autism",
-                rating = VerificationResult.Rating.MOSTLY_FALSE,
-                summary = "This claim is false. Multiple large-scale studies have found no link between vaccines and autism.",
-                explanation = "The original study claiming a vaccine-autism link has been thoroughly discredited and retracted. Numerous subsequent studies involving millions of children have found no connection between vaccines and autism. The scientific consensus is clear that vaccines do not cause autism.",
+                claim = "Ancient aliens built the pyramids",
+                rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
+                summary = "This claim cannot be verified with current evidence.",
+                explanation = "There is no credible evidence to support the claim that ancient aliens built the pyramids. However, it's difficult to definitively prove a negative. The mainstream archaeological consensus is that the pyramids were built by ancient Egyptians using sophisticated engineering techniques for their time.",
                 citations = listOf(
-                    "https://www.cdc.gov/vaccinesafety/concerns/autism.html",
-                    "https://www.who.int/news-room/fact-sheets/detail/immunization-vaccines-and-biologicals"
+                    "https://www.nationalgeographic.com/history/archaeology/giza-pyramids/",
+                    "https://www.smithsonianmag.com/history/ancient-egypt-shipping-mining-farming-economy-pyramids-180956619/"
                 )
             ),
             onNewQuery = {}

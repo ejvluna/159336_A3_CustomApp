@@ -128,55 +128,62 @@
 
 ***
 
-## Phase 5: UI Implementation - Jetpack Compose
+## ✅ Phase 5: UI Implementation - Jetpack Compose
 
-### Task 5.1: Create MainActivity with Compose
-- Setup Compose in MainActivity
-- Implement bottom navigation with Compose
-- Setup navigation between screens
+### ✅ Task 5.1: Create MainActivity with Compose
+- ✅ Setup Compose in MainActivity
+- ✅ Implement bottom navigation with Compose
+- ✅ Setup navigation between screens
 
-### Task 5.2: Create QueryInputScreen Composable
-- Material Design text input field
-- Character counter (500 char limit)
-- Submit button with loading state
-- Error message display
-- Input validation
+### ✅ Task 5.2: Create QueryInputScreen Composable
+- ✅ Material Design text input field
+- ✅ Character counter (500 char limit)
+- ✅ Submit button with loading state
+- ✅ Error message display
+- ✅ Input validation
 
-### Task 5.3: Create ResultDisplayScreen Composable
-- Status indicator (color-coded)
-- Scrollable result display
-- Summary and explanation text
-- Citations list with clickable URLs
-- New Query button
+### ✅ Task 5.3: Create ResultDisplayScreen Composable
+- ✅ Status indicator (color-coded)
+- ✅ Scrollable result display
+- ✅ Summary and explanation text
+- ✅ Citations list with clickable URLs
+- ✅ New Query button
 
-### Task 5.4: Create HistoryScreen Composable
-- LazyColumn list of past queries
-- Timestamp display
-- Click to view full results
-- Swipe to delete functionality
-- Empty state handling
+### ✅ Task 5.4: Create HistoryScreen Composable
+- ✅ LazyColumn list of past queries
+- ✅ Timestamp display
+- ✅ Click to view full results
+- ✅ Swipe to delete functionality
+- ✅ Empty state handling
 
 ***
 
-## Phase 6: API Integration & Testing
+## ✅  Phase 6: API Integration & Testing 
 
-### Task 6.1: Test API Connection
-- Create test function in repository
-- Verify API key authentication
-- Test with sample query
-- Log request/response for debugging
+### ✅  Task 6.1: Test API Connection
+- ✅ Create test function in repository
+- ✅ Verify API key authentication
+- ✅ Test with sample query
+- ✅ Log request/response for debugging
 
-### Task 6.2: Test Domain Filtering
-- Verify `search_domain_filter` parameter works[6][1]
-- Confirm responses cite only trusted sources
-- Adjust sources list if needed
+### ✅ Task 6.2: Test Domain Filtering
+- ✅ Verify `search_domain_filter` parameter works
+- ✅ Confirm responses cite only trusted sources
+- ✅ Adjust sources list if needed
 
-### Task 6.3: Implement Error Handling
-- Handle network timeouts
-- Handle API rate limiting (429 errors)
-- Handle invalid API key (401 errors)
-- Handle malformed responses
-- Display user-friendly error messages in UI
+### ✅ Task 6.3: Implement Error Handling
+- ✅ Handle network timeouts
+- ✅ Handle API rate limiting (429 errors)
+- ✅ Handle invalid API key (401 errors)
+- ✅ Handle malformed responses
+- ✅ Display user-friendly error messages in UI
+
+### Implementation Details:
+- Added comprehensive error handling in `PerplexityRepository.kt`
+- Implemented structured JSON responses with Sonar API
+- Added domain filtering using `DEFAULT_SEARCH_DOMAIN_FILTER`
+- Created user-friendly error messages for all failure cases
+- Added detailed logging for debugging
 
 ***
 

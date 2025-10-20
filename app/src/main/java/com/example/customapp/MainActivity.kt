@@ -3,9 +3,13 @@ package com.example.customapp
 
 // Import the required packages for the app theme and activity
 import com.example.customapp.ui.theme.CustomAppTheme
-import com.example.customapp.ui.QueryInputScreenFull
-import com.example.customapp.ui.HistoryScreenFull
+import com.example.customapp.ui.QueryInputScreen
+import com.example.customapp.ui.HistoryScreen
+import com.example.customapp.ui.ResultDisplayScreen
 import com.example.customapp.data.model.VerificationResult
+import com.example.customapp.data.PerplexityRepository
+import com.example.customapp.data.api.RetrofitClient
+import com.example.customapp.data.database.AppDatabase
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -21,6 +25,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 // Define the main activity class
 class MainActivity : ComponentActivity() {
@@ -39,12 +44,27 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// Define the custom app composable function
+// Composable to display the main app UI (entry point)
 @Composable
 fun CustomApp() {
+    // Create state variables needed to track the app state
     var selectedScreen by remember { mutableStateOf(Screen.QUERY) }
     var historyList by remember { mutableStateOf<List<VerificationResult>>(emptyList()) }
+    var currentResult by remember { mutableStateOf<VerificationResult?>(null) }
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
+    // Get and store the app context, coroutine scope, and repository
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val scope = rememberCoroutineScope()
+    val repository = remember {
+        val apiService = RetrofitClient.sonarApiService
+        val database = AppDatabase.getDatabase(context)
+        val dao = database.claimHistoryDao()
+        PerplexityRepository(apiService, dao)
+    }
+
+    // Create the app UI using a Scaffold
     Scaffold(
         bottomBar = {
             NavigationBar {
@@ -63,69 +83,69 @@ fun CustomApp() {
             }
         }
     ) { paddingValues ->
+        // Create a Box to display the appropriate screen based on the selected screen
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
+            // When the selected screen is QUERY, display the QueryInputScreen
             when (selectedScreen) {
-                Screen.QUERY -> QueryInputScreenFull(
+                Screen.QUERY -> QueryInputScreen(
+                    // When the user submits a query, launch a coroutine to verify the query
                     onSubmit = { query ->
-                        // Handle query submission
-                    }
+                        isLoading = true
+                        errorMessage = null
+                        scope.launch {
+                            try {
+                                val result = repository.verifyQuery(query)
+                                currentResult = result
+                                selectedScreen = Screen.RESULT
+                                isLoading = false
+                            } catch (e: Exception) {
+                                errorMessage = "Error: ${e.message}"
+                                isLoading = false
+                            }
+                        }
+                    },
+                    isLoading = isLoading,
+                    errorMessage = errorMessage,
+                    repository = repository
                 )
-                Screen.HISTORY -> HistoryScreenFull(
+                // When the selected screen is HISTORY, display the HistoryScreen
+                Screen.HISTORY -> HistoryScreen(
                     historyList = historyList,
+                    // When the user clicks on a history item, launch a coroutine to display the result
                     onItemClick = { result ->
-                        // Handle item click
+                        currentResult = result
+                        selectedScreen = Screen.RESULT
                     },
                     onDelete = { id ->
                         // Handle delete
                     }
                 )
+                // When the selected screen is RESULT, display the ResultDisplayScreen
+                Screen.RESULT -> {
+                    if (currentResult != null) {
+                        ResultDisplayScreen(
+                            result = currentResult!!,
+                            // When the user clicks on the "New Query" button, launch a coroutine to display the QueryInputScreen again
+                            onNewQuery = {
+                                currentResult = null
+                                errorMessage = null
+                                selectedScreen = Screen.QUERY
+                            }
+                        )
+                    }
+                }
             }
         }
     }
 }
 
-// Define the screen enum class: the different screens of the app
+// Define a enum class for the different screens of the app
 enum class Screen {
     QUERY,
-    HISTORY
-}
-
-// Define the query input screen composable function
-@Composable
-fun QueryInputScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Verify a Claim",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 32.dp)
-        )
-        Text("Query input screen placeholder")
-    }
-}
-
-// Define the history screen composable function
-@Composable
-fun HistoryScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Verification History",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-        Text("History screen placeholder")
-    }
+    HISTORY,
+    RESULT
 }

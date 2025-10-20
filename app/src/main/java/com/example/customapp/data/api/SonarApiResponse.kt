@@ -1,15 +1,20 @@
+// data/api/SonarApiResponse.kt
 package com.example.customapp.data.api
 
 import com.google.gson.annotations.SerializedName
 
+// Data class to represent the response from the Sonar API
 data class SonarApiResponse(
     @SerializedName("id")
     val id: String,
     @SerializedName("choices")
     val choices: List<Choice>,
     @SerializedName("usage")
-    val usage: Usage
+    val usage: Usage,
+    @SerializedName("citations")
+    val citations: List<String>? = null
 ) {
+    // Subdata class to represent a choice from the API response (i.e. the response from the API)
     data class Choice(
         @SerializedName("message")
         val message: Message,
@@ -23,7 +28,7 @@ data class SonarApiResponse(
             val content: String
         )
     }
-
+    // Subdata class to represent the usage from the API response (i.e. the number of tokens used)
     data class Usage(
         @SerializedName("prompt_tokens")
         val promptTokens: Int,

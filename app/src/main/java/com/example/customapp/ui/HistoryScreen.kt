@@ -1,7 +1,7 @@
+// ui/HistoryScreen.kt
 package com.example.customapp.ui
 
 // Import packages required for functionality
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,7 +29,7 @@ import com.example.customapp.ui.theme.CustomAppTheme
 
 @Composable
 // A composable to display the verification history screen
-fun HistoryScreenFull(
+fun HistoryScreen(
     // Create a list to store past verification results
     historyList: List<VerificationResult>,
     // Make each item clickable and pass the result to the ResultDisplayScreen (to view it)
@@ -166,9 +166,10 @@ fun HistoryItem(
 // Composable to display a rating badge for a verification result
 fun RatingBadge(rating: VerificationResult.Rating) {
     val (label, color) = when (rating) {
-        VerificationResult.Rating.MOSTLY_TRUE -> "True" to Color(0xFF4CAF50)
-        VerificationResult.Rating.MIXED -> "Mixed" to Color(0xFFFFC107)
-        VerificationResult.Rating.MOSTLY_FALSE -> "False" to Color(0xFFF44336)
+        VerificationResult.Rating.TRUE -> "True" to Color(0xFF4CAF50)
+        VerificationResult.Rating.FALSE -> "False" to Color(0xFFF44336)
+        VerificationResult.Rating.MISLEADING -> "Misleading" to Color(0xFFFFA000) // Orange
+        VerificationResult.Rating.UNABLE_TO_VERIFY -> "Unverified" to Color(0xFF9E9E9E) // Grey
     }
 
     Surface(
@@ -233,28 +234,35 @@ fun formatTimestamp(timestamp: Long): String {
 @Composable
 fun HistoryScreenPreviewWithItems() {
     CustomAppTheme {
-        HistoryScreenFull(
+        HistoryScreen(
             historyList = listOf(
                 VerificationResult(
                     claim = "The Earth is round",
-                    rating = VerificationResult.Rating.MOSTLY_TRUE,
+                    rating = VerificationResult.Rating.TRUE,
                     summary = "This claim is supported by scientific evidence.",
                     explanation = "Multiple observations confirm Earth's spherical shape.",
                     citations = listOf("https://www.nasa.gov")
                 ),
                 VerificationResult(
                     claim = "Coffee is bad for health",
-                    rating = VerificationResult.Rating.MIXED,
+                    rating = VerificationResult.Rating.MISLEADING,  // Changed from MIXED to MISLEADING
                     summary = "Partially true - depends on consumption amount.",
                     explanation = "Moderate consumption has benefits, excessive consumption has risks.",
                     citations = listOf("https://www.healthline.com")
                 ),
                 VerificationResult(
                     claim = "Vaccines cause autism",
-                    rating = VerificationResult.Rating.MOSTLY_FALSE,
+                    rating = VerificationResult.Rating.FALSE,
                     summary = "This claim is false.",
                     explanation = "Multiple studies have found no link between vaccines and autism.",
                     citations = listOf("https://www.cdc.gov")
+                ),
+                VerificationResult(
+                    claim = "Ancient aliens built the pyramids",
+                    rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
+                    summary = "Insufficient evidence to verify this claim.",
+                    explanation = "There is no credible evidence to support this claim, but it cannot be definitively disproven with current archaeological knowledge.",
+                    citations = emptyList()
                 )
             ),
             onItemClick = {},
@@ -268,7 +276,7 @@ fun HistoryScreenPreviewWithItems() {
 @Composable
 fun HistoryScreenPreviewEmpty() {
     CustomAppTheme {
-        HistoryScreenFull(
+        HistoryScreen(
             historyList = emptyList(),
             onItemClick = {},
             onDelete = {}
