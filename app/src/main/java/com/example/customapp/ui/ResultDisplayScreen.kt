@@ -27,6 +27,7 @@ import com.example.customapp.ui.theme.CustomAppTheme
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.ui.text.style.TextAlign
+import com.example.customapp.ui.theme.*
 
 // -------------------------------------------------------------------------------------------------
 // Composables
@@ -171,22 +172,22 @@ fun StatusIndicator(rating: VerificationResult.Rating) {
     val (icon, color, label) = when (rating) {
         VerificationResult.Rating.TRUE -> Triple(
             Icons.Filled.CheckCircle,
-            Color(0xFF4CAF50),
+            MaterialTheme.colorScheme.statusTrue,
             "True"
         )
         VerificationResult.Rating.FALSE -> Triple(
             Icons.Filled.Close,
-            Color(0xFFF44336),
+            MaterialTheme.colorScheme.statusFalse,
             "False"
         )
         VerificationResult.Rating.MISLEADING -> Triple(
             Icons.Filled.Warning,
-            Color(0xFFFFA000),  // Orange
+            MaterialTheme.colorScheme.statusMisleading,
             "Misleading"
         )
         VerificationResult.Rating.UNABLE_TO_VERIFY -> Triple(
             Icons.Filled.Info,
-            Color(0xFF9E9E9E),  // Grey
+            MaterialTheme.colorScheme.statusUnverified,
             "Unable to Verify"
         )
     }

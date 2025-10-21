@@ -63,7 +63,7 @@ Your app will follow a two-layer architecture optimized for MVP simplicity:[5][1
 
 ## Component Architecture
 
-### Core Components (Within 10-Class Limit)
+### Core Components (10-Class Limit)
 
 **1. `MainActivity`** - Entry point with Compose UI[9][1]
 

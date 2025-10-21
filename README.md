@@ -282,6 +282,13 @@ Using `Flow` and `StateFlow` enables reactive, non-blocking data updates. The da
 #### Error Handling Strategy
 Comprehensive try-catch blocks with specific exception handling for HTTP errors, network timeouts, connection failures, and JSON parsing errors. Each error type returns user-friendly messages and appropriate fallback states, ensuring graceful degradation without app crashes.
 
+#### Resource Management Strategy
+The app implements MVP-level resource management to prevent memory leaks and optimize resource usage:
+- **Coroutine Cleanup**: `DisposableEffect` in `CustomApp()` cancels pending coroutines when the composable is disposed, preventing orphaned API calls
+- **Singleton Pattern**: `RetrofitClient` and `AppDatabase` use lazy initialization to create single instances, enabling connection pooling and preventing resource duplication
+- **Compose Framework Cleanup**: `rememberCoroutineScope()` and `collectAsState()` are automatically cancelled/unsubscribed when composables leave composition
+- **Stateless Repository**: `PerplexityRepository` holds no resources; API calls are managed by the calling coroutine scope and database operations by Room
+
 ---
 
 ## 🚀 Setup Instructions
@@ -331,39 +338,40 @@ PERPLEXITY_API_KEY=your_api_key_here
 app/
 ├── src/main/
 │   ├── java/com/example/customapp/
-│   │   ├── MainActivity.kt              # Entry point with Compose UI
+│   │   ├── MainActivity.kt              # Entry point with Compose UI, screen navigation, and state management
 │   │   ├── config/
-│   │   │   └── TrustedSources.kt        # Pre-configured trusted domains
+│   │   │   ├── ApiConfig.kt             # API configuration (base URL, endpoints, model settings)
+│   │   │   └── TrustedSources.kt        # Pre-configured trusted domains for search filtering
 │   │   ├── data/
+│   │   │   ├── PerplexityRepository.kt  # Data layer coordinator (API + Database operations)
 │   │   │   ├── api/
-│   │   │   │   ├── SonarApiService.kt   # Retrofit API interface
-│   │   │   │   ├── SonarApiRequest.kt   # Request data class
-│   │   │   │   └── SonarApiResponse.kt  # Response data class
+│   │   │   │   ├── RetrofitClient.kt    # Retrofit singleton with OkHttp configuration
+│   │   │   │   ├── SonarApiService.kt   # Retrofit API interface for Perplexity Sonar API
+│   │   │   │   ├── SonarApiRequest.kt   # Request data class for API calls
+│   │   │   │   └── SonarApiResponse.kt  # Response data class from API
 │   │   │   ├── database/
-│   │   │   │   ├── AppDatabase.kt       # Room database instance
-│   │   │   │   ├── ClaimHistoryDao.kt   # Database access object
-│   │   │   │   └── ClaimHistoryEntity.kt# Database entity
-│   │   │   ├── model/
-│   │   │   │   ├── VerificationResult.kt# UI model
-│   │   │   │   └── Rating.kt            # Enum for ratings
-│   │   │   └── repository/
-│   │   │       └── PerplexityRepository.kt # Data layer coordinator
+│   │   │   │   ├── AppDatabase.kt       # Room database singleton instance
+│   │   │   │   ├── ClaimHistoryDao.kt   # DAO for CRUD operations on history
+│   │   │   │   └── ClaimHistoryEntity.kt# Database entity for claim history
+│   │   │   └── model/
+│   │   │       ├── VerificationResult.kt# UI model for verification results
+│   │   │       └── Rating.kt            # Enum for claim ratings
 │   │   ├── ui/
-│   │   │   ├── QueryInputScreenFull.kt  # Query input composable
-│   │   │   ├── ResultDisplayScreen.kt   # Results display composable
-│   │   │   ├── HistoryScreenFull.kt     # History list composable
-│   │   │   └── theme/                   # Material Design 3 theme
-│   │   │       ├── Color.kt
-│   │   │       ├── Type.kt
-│   │   │       └── Theme.kt
-│   │   └── viewmodel/
-│   │       ├── QueryViewModel.kt        # Query screen state management
-│   │       └── HistoryViewModel.kt      # History screen state management
-│   └── res/
-│       ├── values/
-│       ├── xml/
-│       └── mipmap/
-└── build.gradle                         # Dependencies and build config
+│   │   │   ├── QueryInputScreen.kt      # Query input composable with validation
+│   │   │   ├── ResultDisplayScreen.kt   # Results display composable with citations
+│   │   │   ├── HistoryScreen.kt         # History list composable with delete functionality
+│   │   │   ├── QueryViewModel.kt        # Query screen state management (StateFlow)
+│   │   │   ├── HistoryViewModel.kt      # History screen state management (StateFlow)
+│   │   │   └── theme/
+│   │   │       ├── Color.kt             # Material Design 3 color definitions
+│   │   │       ├── Type.kt              # Material Design 3 typography
+│   │   │       └── Theme.kt             # App theme with dynamic color support
+│   │   └── res/
+│   │       ├── values/
+│   │       ├── xml/
+│   │       └── mipmap/
+│   └── build.gradle.kts                 # Dependencies and build configuration
+└── README.md                             # Project documentation
 ```
 
 ---

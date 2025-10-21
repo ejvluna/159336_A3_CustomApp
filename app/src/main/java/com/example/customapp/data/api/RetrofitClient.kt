@@ -8,9 +8,10 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-// Singleton object that configures and provides instances of Retrofit and OkHttpClient for API communication
+// Singleton object that configures and provides single instances of Retrofit and OkHttpClient that are reused throughout app lifetime for API communication
 object RetrofitClient {
     // OkHttpClient configured with 30-second timeouts for connection, read, and write operations; retries on connection failure
+    // Connection pooling is automatic - OkHttp reuses connections for multiple requests
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
