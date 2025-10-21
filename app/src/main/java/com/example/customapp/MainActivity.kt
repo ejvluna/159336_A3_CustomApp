@@ -23,11 +23,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.History
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 
-// Define the main activity class
+// Class to encapsulate the main app logic
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +35,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // Call the CustomApp composable to display the main app UI
                     CustomApp()
                 }
             }
@@ -49,7 +48,6 @@ class MainActivity : ComponentActivity() {
 fun CustomApp() {
     // Create state variables needed to track the app state
     var selectedScreen by remember { mutableStateOf(Screen.QUERY) }
-    var historyList by remember { mutableStateOf<List<VerificationResult>>(emptyList()) }
     var currentResult by remember { mutableStateOf<VerificationResult?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -63,6 +61,9 @@ fun CustomApp() {
         val dao = database.claimHistoryDao()
         PerplexityRepository(apiService, dao)
     }
+
+    // Collect history from the repository as a StateFlow
+    val historyList by repository.getHistory().collectAsState(initial = emptyList())
 
     // Create the app UI using a Scaffold
     Scaffold(
@@ -100,6 +101,8 @@ fun CustomApp() {
                             try {
                                 val result = repository.verifyQuery(query)
                                 currentResult = result
+                                // Save the result to the database
+                                repository.saveQuery(result)
                                 selectedScreen = Screen.RESULT
                                 isLoading = false
                             } catch (e: Exception) {
@@ -109,8 +112,7 @@ fun CustomApp() {
                         }
                     },
                     isLoading = isLoading,
-                    errorMessage = errorMessage,
-                    repository = repository
+                    errorMessage = errorMessage
                 )
                 // When the selected screen is HISTORY, display the HistoryScreen
                 Screen.HISTORY -> HistoryScreen(
@@ -120,8 +122,15 @@ fun CustomApp() {
                         currentResult = result
                         selectedScreen = Screen.RESULT
                     },
+                    // When the user deletes a history item, launch a coroutine to delete it from the database
                     onDelete = { id ->
-                        // Handle delete
+                        scope.launch {
+                            try {
+                                repository.deleteQuery(id)
+                            } catch (e: Exception) {
+                                errorMessage = "Error deleting: ${e.message}"
+                            }
+                        }
                     }
                 )
                 // When the selected screen is RESULT, display the ResultDisplayScreen

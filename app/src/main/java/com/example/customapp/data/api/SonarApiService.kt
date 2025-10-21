@@ -6,11 +6,16 @@ import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST
 
-// Interface to define the API service for the Sonar API
+// Retrofit interface that defines the HTTP endpoint for the Perplexity Sonar API.
 interface SonarApiService {
+    // POST request to the "chat/completions" endpoint that sends a claim for fact-checking and returns a verification result
+
     @POST("chat/completions")
+    // Function to verify a claim using the Sonar API
     suspend fun verifyClaim(
+        // Bearer token for API authentication;
         @Header("Authorization") authHeader: String,
+        // SonarApiRequest containing the claim and search parameters
         @Body request: SonarApiRequest
     ): SonarApiResponse
 }

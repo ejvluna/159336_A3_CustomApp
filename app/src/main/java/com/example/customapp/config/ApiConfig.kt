@@ -27,6 +27,14 @@ object ApiConfig {
     const val DEFAULT_TEMPERATURE = 0.2f
     const val DEFAULT_MAX_TOKENS = 1000
 
+    // Search efficiency parameters (per Perplexity API documentation): https://docs.perplexity.ai/guides/search-quickstart
+    // max_tokens_per_page: Controls content extraction from each webpage (512 = concise, focused content)
+    const val DEFAULT_MAX_TOKENS_PER_PAGE = 512
+    // max_results: Limits number of search results to process
+    const val DEFAULT_MAX_RESULTS = 5
+    // num_sources: Limits number of citations returned
+    const val DEFAULT_NUM_SOURCES = 3
+
     // Search domain filter (set by TrustedSources.kt)
     val DEFAULT_SEARCH_DOMAIN_FILTER: List<String>
         get() = TrustedSources.DOMAINS

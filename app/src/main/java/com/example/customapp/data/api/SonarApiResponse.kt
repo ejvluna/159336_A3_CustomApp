@@ -3,7 +3,7 @@ package com.example.customapp.data.api
 
 import com.google.gson.annotations.SerializedName
 
-// Data class to represent the response from the Sonar API
+// Data class that maps the JSON response from the Perplexity Sonar API. Contains the model's response choices, token usage, and citations.
 data class SonarApiResponse(
     @SerializedName("id")
     val id: String,
@@ -14,13 +14,14 @@ data class SonarApiResponse(
     @SerializedName("citations")
     val citations: List<String>? = null
 ) {
-    // Subdata class to represent a choice from the API response (i.e. the response from the API)
+    // Nested data class representing a single response choice from the model (the API can return multiple choices)
     data class Choice(
         @SerializedName("message")
         val message: Message,
         @SerializedName("index")
         val index: Int
     ) {
+        // Nested data class containing the model's response message with role (e.g., "assistant") and the fact-check content
         data class Message(
             @SerializedName("role")
             val role: String,
@@ -28,7 +29,7 @@ data class SonarApiResponse(
             val content: String
         )
     }
-    // Subdata class to represent the usage from the API response (i.e. the number of tokens used)
+    // Nested data class tracking token consumption: promptTokens (input) and completionTokens (output) for API billing/monitoring
     data class Usage(
         @SerializedName("prompt_tokens")
         val promptTokens: Int,

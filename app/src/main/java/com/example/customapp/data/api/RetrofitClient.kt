@@ -8,9 +8,9 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
-// Object to handle API calls and HTTP requests
+// Singleton object that configures and provides instances of Retrofit and OkHttpClient for API communication
 object RetrofitClient {
-    // Create an instance of OkHttpClient with timeout settings and lazy initialization
+    // OkHttpClient configured with 30-second timeouts for connection, read, and write operations; retries on connection failure
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
@@ -19,18 +19,15 @@ object RetrofitClient {
             .retryOnConnectionFailure(true)
             .build()
     }
-    // Create and store an instance of Retrofit for API calls
+    // Retrofit instance configured with the Perplexity API base URL and Gson converter for JSON serialization/deserialization
     val retrofit: Retrofit by lazy {
-        // Call the builder method to create a new instance of Retrofit
         Retrofit.Builder()
-            // Set the base URL and add the Gson converter factory for JSON parsing
             .baseUrl(ApiConfig.BASE_URL)
             .client(httpClient)
             .addConverterFactory(GsonConverterFactory.create())
-            // Return the Retrofit instance
             .build()
     }
-    // Create and store an instance of SonarApiService for API calls
+    // SonarApiService instance created from Retrofit for making API requests to the Perplexity Sonar API
     val sonarApiService: SonarApiService by lazy {
         retrofit.create(SonarApiService::class.java)
     }

@@ -80,15 +80,16 @@ The app follows a **two-layer architecture** optimized for clarity and maintaina
 - Real-time UI feedback during verification
 
 ### 2. **Fact-Checking Process**
-- Query processed through Perplexity's Sonar API
+- Query processed through Perplexity's Sonar API: https://www.perplexity.ai/hub/blog/introducing-the-sonar-pro-api
 - Searches across pre-configured trusted domains
 - Returns AI-generated analysis with sources
 
 ### 3. **Results Display**
 - **Verification Rating**: Color-coded credibility indicator
-  - 🟢 Green: MOSTLY_TRUE
-  - 🟡 Yellow: MIXED
-  - 🔴 Red: MOSTLY_FALSE
+  - 🟢 Green: TRUE
+  - 🟡 Yellow: MISLEADING
+  - 🔴 Red: FALSE
+  - Grey: UNABLE TO VERIFY
 - **Summary**: Brief overview of findings
 - **Detailed Explanation**: In-depth analysis
 - **Citations**: Clickable source links for verification
@@ -260,6 +261,26 @@ HistoryScreenFull Observes & Renders List
 ### Design System
 - **Material Design 3**: Modern UI components
 - **Material Icons**: Icon library
+
+### Architectural Patterns & Design Decisions
+
+#### Singleton Pattern (Database)
+The `AppDatabase` class implements the Singleton pattern to ensure only one database instance exists throughout the app's lifetime. This prevents resource conflicts, data inconsistencies, and redundant database connections. The pattern uses `@Volatile` annotation for thread-safe lazy initialization and `synchronized` blocks to prevent race conditions in multi-threaded scenarios.
+
+#### Repository Pattern
+The `PerplexityRepository` class acts as a single source of truth for data operations, abstracting both API calls and database operations. This decouples the UI layer from data sources, making the code more testable and maintainable. The repository handles error handling, data transformation, and provides reactive data streams via Flow.
+
+#### MVVM Architecture
+The app follows the Model-View-ViewModel (MVVM) pattern with clear separation of concerns:
+- **Model**: Data classes (`VerificationResult`, `ClaimHistoryEntity`) and database entities
+- **View**: Jetpack Compose UI components
+- **ViewModel**: `PerplexityViewModel` manages UI state and business logic, exposed via `StateFlow` for reactive updates
+
+#### Reactive Data Streams
+Using `Flow` and `StateFlow` enables reactive, non-blocking data updates. The database queries return `Flow<List<>>` allowing the UI to automatically update whenever data changes, without manual polling or callbacks.
+
+#### Error Handling Strategy
+Comprehensive try-catch blocks with specific exception handling for HTTP errors, network timeouts, connection failures, and JSON parsing errors. Each error type returns user-friendly messages and appropriate fallback states, ensuring graceful degradation without app crashes.
 
 ---
 
