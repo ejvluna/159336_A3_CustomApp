@@ -1,59 +1,57 @@
-// Import the required packages for naming the app and activity
+// MainActivity.kt
 package com.example.customapp
 
-// Import the required packages for the app theme and activity
-import com.example.customapp.ui.theme.CustomAppTheme
-import com.example.customapp.ui.QueryInputScreen
-import com.example.customapp.ui.HistoryScreen
-import com.example.customapp.ui.ResultDisplayScreen
-import com.example.customapp.data.model.VerificationResult
-import com.example.customapp.data.PerplexityRepository
-import com.example.customapp.data.api.RetrofitClient
-import com.example.customapp.data.database.AppDatabase
+// Android Framework Imports for Activity lifecycle and state management, and asynchronous operations
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.History
 import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancelChildren
+// Jetpack Compose Imports for building UI structures, smooth transitions, and layout management
+import androidx.compose.animation.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+// Material Design 3 components & icons for consistent, modern UI
+import androidx.compose.material3.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Search
+// Imports for data layer abstraction and management
+import com.example.customapp.data.PerplexityRepository
+import com.example.customapp.data.api.RetrofitClient
+import com.example.customapp.data.database.AppDatabase
+import com.example.customapp.data.model.VerificationResult
+// UI Layer Imports for screens and theme
+import com.example.customapp.ui.HistoryScreen
+import com.example.customapp.ui.QueryInputScreen
+import com.example.customapp.ui.ResultDisplayScreen
+import com.example.customapp.ui.theme.CustomAppTheme
 
-// Class to encapsulate the main app logic
+// Main class that extends ComponentActivity to represent the main activity (entry point) of the app
 class MainActivity : ComponentActivity() {
+    // Lifecycle method called when the activity is created
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Call the CustomApp composable to display the app UI as the content of the activity
         setContent {
-            CustomAppTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    // Call the CustomApp composable to display the main app UI
-                    CustomApp()
-                }
-            }
+            CustomApp()
         }
     }
 }
-
-// Composable to display the main app UI (entry point)
+// Root composable that manages application state and screen navigation
 @Composable
 fun CustomApp() {
-    // Create state variables needed to track the app state
+// STATE MANAGEMENT: Mutable state variables (current screen, result, loading, error) that trigger UI recomposition when their values change
     var selectedScreen by remember { mutableStateOf(Screen.QUERY) }
     var currentResult by remember { mutableStateOf<VerificationResult?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Get and store the app context, coroutine scope, and repository
-    val context = androidx.compose.ui.platform.LocalContext.current
+// DATA LAYER: Persistent repository with API service and database DAO, using context and coroutine scope for background operations
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repository = remember {
         val apiService = RetrofitClient.sonarApiService
@@ -62,89 +60,97 @@ fun CustomApp() {
         PerplexityRepository(apiService, dao)
     }
 
-    // Collect history from the repository as a StateFlow
-    val historyList by repository.getHistory().collectAsState(initial = emptyList())
+// REACTIVE DATA: Convert database Flow<List> to Compose State for automatic UI updates
+    val historyList by repository.getHistory().collectAsState(emptyList())
 
-    // Create the app UI using a Scaffold
-    Scaffold(
-        bottomBar = {
-            NavigationBar {
-                NavigationBarItem(
-                    icon = { Icon(Icons.Filled.Search, contentDescription = "Query") },
-                    label = { Text("Verify") },
-                    selected = selectedScreen == Screen.QUERY,
-                    onClick = { selectedScreen = Screen.QUERY }
-                )
-                NavigationBarItem(
-                    icon = { Icon(Icons.Filled.History, contentDescription = "History") },
-                    label = { Text("History") },
-                    selected = selectedScreen == Screen.HISTORY,
-                    onClick = { selectedScreen = Screen.HISTORY }
-                )
+// RESOURCE MANAGEMENT: Cleanup in-flight operations when composable leaves composition (e.g., activity destroyed or user navigates away)
+    // Definition for the compose library function DisposableEffect to manage resources
+    DisposableEffect(Unit) {
+        // When the app closes, onDispose runs and cancels all pending coroutines (API calls, database operations, etc.)
+        onDispose {
+            scope.coroutineContext.cancelChildren()        }
+    }
+
+// HELPER FUNCTIONS: Functions that perform specific tasks to manage app state and perform actions
+    // Helper Function that handles the submission of a query to the API
+    fun onQuerySubmit(query: String) {
+        // Update state variables to show loading and clear any previous error messages
+        isLoading = true
+        errorMessage = null
+        // Launch a coroutine to perform the API call to not block the UI thread
+        scope.launch {
+            // Use a try-catch block to ensure the app doesn't crash on unexpected errors
+            try {
+                // 1. Verify the query and store it in a local variable to ensure
+                val result = repository.verifyQuery(query)
+                // 2. Save the successful result to the database using your existing function
+                repository.saveQuery(result)
+                // 3. Update the state to show the result on the screen
+                currentResult = result
+                selectedScreen = Screen.RESULT
+            } catch (e: Exception) {
+                // Catch any errors and display a message to alert the user
+                errorMessage = e.message ?: "An error occurred"
+            } finally {
+                // Set the loading state to false after the API call is complete
+                isLoading = false
             }
         }
-    ) { paddingValues ->
-        // Create a Box to display the appropriate screen based on the selected screen
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
+    }
+    // Helper Function that deletes a query from the database (launches async coroutine to avoid blocking UI)
+    fun onDeleteItem(id: Int) = scope.launch { repository.deleteQuery(id) }
+    // Helper Function that handles the selection of a query from the history list
+    fun onHistoryItemClick(item: VerificationResult) {
+        // Store the selected item
+        currentResult = item
+        // Change the selected screen to the RESULT screen
+        selectedScreen = Screen.RESULT
+    }
+    // Helper Function that navigates back to the Query screen
+    fun onNewQuery() {
+        selectedScreen = Screen.QUERY
+    }
+
+// UI COMPOSITION: Apply theme and build the main app layout with navigation using helper composables and functions
+    CustomAppTheme {
+        // Set modifiers to fill the max size of the screen and set the background color
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
         ) {
-            // When the selected screen is QUERY, display the QueryInputScreen
-            when (selectedScreen) {
-                Screen.QUERY -> QueryInputScreen(
-                    // When the user submits a query, launch a coroutine to verify the query
-                    onSubmit = { query ->
-                        isLoading = true
-                        errorMessage = null
-                        scope.launch {
-                            try {
-                                val result = repository.verifyQuery(query)
-                                currentResult = result
-                                // Save the result to the database
-                                repository.saveQuery(result)
-                                selectedScreen = Screen.RESULT
-                                isLoading = false
-                            } catch (e: Exception) {
-                                errorMessage = "Error: ${e.message}"
-                                isLoading = false
-                            }
-                        }
-                    },
-                    isLoading = isLoading,
-                    errorMessage = errorMessage
-                )
-                // When the selected screen is HISTORY, display the HistoryScreen
-                Screen.HISTORY -> HistoryScreen(
-                    historyList = historyList,
-                    // When the user clicks on a history item, launch a coroutine to display the result
-                    onItemClick = { result ->
-                        currentResult = result
-                        selectedScreen = Screen.RESULT
-                    },
-                    // When the user deletes a history item, launch a coroutine to delete it from the database
-                    onDelete = { id ->
-                        scope.launch {
-                            try {
-                                repository.deleteQuery(id)
-                            } catch (e: Exception) {
-                                errorMessage = "Error deleting: ${e.message}"
-                            }
-                        }
-                    }
-                )
-                // When the selected screen is RESULT, display the ResultDisplayScreen
-                Screen.RESULT -> {
-                    if (currentResult != null) {
-                        ResultDisplayScreen(
-                            result = currentResult!!,
-                            // When the user clicks on the "New Query" button, launch a coroutine to display the QueryInputScreen again
-                            onNewQuery = {
-                                currentResult = null
-                                errorMessage = null
-                                selectedScreen = Screen.QUERY
-                            }
+            // Call the BottomNavigationBar composable to display the bottom navigation bar
+            Scaffold(
+                bottomBar = { BottomNavigationBar(selectedScreen) { selectedScreen = it } }
+            ) { padding ->
+                // Display the appropriate screen container based on the selected tab by calling the appropriate helper composable
+                Box(Modifier.padding(padding)) {
+                    when (selectedScreen) {
+                        Screen.QUERY -> QueryScreenContainer(
+                            onSubmit = ::onQuerySubmit,
+                            isLoading = isLoading,
+                            errorMessage = errorMessage
                         )
+                        Screen.HISTORY -> HistoryScreenContainer(
+                            historyList = historyList,
+                            onItemClick = ::onHistoryItemClick,
+                            onDeleteQuery = ::onDeleteItem
+                        )
+                        Screen.RESULT -> {
+                            // Create a local, immutable copy of the state variable.
+                            val result = currentResult
+                            // Only show the Result screen if there IS a result. Otherwise, redirect back to the Query screen immediately.
+                            if (result != null) {
+                                ResultScreenContainer(
+                                    currentResult = result,
+                                    onNewQuery = ::onNewQuery
+                                )
+                            } else {
+                                // If we land here with no result, go back to QUERY.
+                                LaunchedEffect(Unit) {
+                                    selectedScreen = Screen.QUERY
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -152,9 +158,97 @@ fun CustomApp() {
     }
 }
 
-// Define a enum class for the different screens of the app
-enum class Screen {
-    QUERY,
-    HISTORY,
-    RESULT
+// Bottom navigation bar with tabs for switching between screens
+@Composable
+private fun BottomNavigationBar(
+    selectedScreen: Screen,
+    onTabSelected: (Screen) -> Unit
+) {
+    // Material Design 3 NavigationBar component
+    NavigationBar {
+        // Navigation tab for submitting queries
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.Search, "Search") },
+            label = { Text("Verify") },
+            selected = selectedScreen == Screen.QUERY,
+            onClick = { onTabSelected(Screen.QUERY) }
+        )
+        // Navigation tab for viewing verification history
+        NavigationBarItem(
+            icon = { Icon(Icons.Filled.History, "History") },
+            label = { Text("History") },
+            selected = selectedScreen == Screen.HISTORY,
+            onClick = { onTabSelected(Screen.HISTORY) }
+        )
+    }
 }
+
+// Composable container to display the Query screen with fade transition animation
+@Composable
+private fun QueryScreenContainer(
+    onSubmit: (String) -> Unit,
+    isLoading: Boolean,
+    errorMessage: String?
+) {
+    // Call ScreenTransition composable to wrap screen with fade transition animation
+    ScreenTransition {
+        // Call QueryInputScreen composable to render the QueryInputScreen UI component with callbacks
+        QueryInputScreen(
+            onSubmit = onSubmit,
+            isLoading = isLoading,
+            errorMessage = errorMessage
+        )
+    }
+}
+
+// Composable container to display the Result screen with fade transition animation
+@Composable
+private fun ResultScreenContainer(
+    currentResult: VerificationResult,
+    onNewQuery: () -> Unit
+) {
+    // Call ScreenTransition composable to wrap screen with fade transition animation
+    ScreenTransition {
+        // Call ResultDisplayScreen composable to render the ResultsDisplayScreen UI component with callbacks
+        ResultDisplayScreen(
+            result = currentResult,
+            onNewQuery = onNewQuery
+        )
+    }
+}
+
+// Composable container to display the History screen with fade transition animation
+@Composable
+private fun HistoryScreenContainer(
+    historyList: List<VerificationResult>,
+    onItemClick: (VerificationResult) -> Unit,
+    onDeleteQuery: (Int) -> Unit,
+) {
+    // Call ScreenTransition composable to wrap screen with fade transition animation
+    ScreenTransition {
+        // Call HistoryScreen composable to render the HistoryScreen UI component with callbacks
+        HistoryScreen(
+            historyList = historyList,
+            onItemClick = onItemClick,
+            onDelete = onDeleteQuery,
+        )
+    }
+}
+
+// Enum to define the three main screens in the app navigation
+enum class Screen { QUERY, HISTORY, RESULT }
+
+// Helper composable that centralizes animation logic for consistent fade transitions across all screens
+@Composable
+private fun ScreenTransition(content: @Composable () -> Unit) {
+    // Use AnimatedVisibility to animate the content with fade in and fade out transitions
+    AnimatedVisibility(
+        visible = true,
+        enter = fadeIn(),
+        exit = fadeOut()
+    ) {
+        // Call the content composable to render the UI component
+        content()
+    }
+}
+

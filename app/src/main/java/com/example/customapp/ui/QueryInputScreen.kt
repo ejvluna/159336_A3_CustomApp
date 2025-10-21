@@ -12,10 +12,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.tooling.preview.Preview
-import com.example.customapp.ui.theme.CustomAppTheme
+import com.example.customapp.ui.theme.*
 
-@Composable
 // Composable to display the query input screen
+@Composable
 fun QueryInputScreen(
     onSubmit: (String) -> Unit,
     isLoading: Boolean = false,
@@ -25,8 +25,10 @@ fun QueryInputScreen(
     var query by remember { mutableStateOf("") }
     val maxCharacters = 500
     val charCount = query.length
+    var showEmptyError by remember { mutableStateOf(false) }
+    var showMaxLengthError by remember { mutableStateOf(false) }
 
-    // Create a column to display the query input screen
+    // Display the query input screen using a column layout
     Column(
         // Set modifiers to fill the max size of the screen, add padding on all sides, and center align the content
         modifier = Modifier
@@ -35,20 +37,25 @@ fun QueryInputScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-        // Headline text for the query input screen
+        // Set text for the query input screen
         Text(
             text = "Verify a Claim",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 24.dp)
         )
-        // Outlined text field for the query input with a label and placeholder
+        // Use an outlined text field for the query input with a label and placeholder
         OutlinedTextField(
             value = query,
             onValueChange = { newValue ->
                 if (newValue.length <= maxCharacters) {
                     query = newValue
+                    showEmptyError = false
+                    showMaxLengthError = false
+                } else {
+                    showMaxLengthError = true
                 }
             },
+            isError = showEmptyError || showMaxLengthError,
             label = { Text("Enter a claim to verify") },
             placeholder = { Text("Type your claim here...") },
             modifier = Modifier
@@ -64,7 +71,7 @@ fun QueryInputScreen(
                 }
             }
         )
-        // Row to display the character count and progress indicator
+        // Display the character count and progress indicator
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -90,12 +97,38 @@ fun QueryInputScreen(
         }
         // Spacer to add space between the character count and the button
         Spacer(modifier = Modifier.height(24.dp))
+        // Show error message if needed
+        if (showEmptyError) {
+            Text(
+                text = "Please enter a claim to verify",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.align(Alignment.Start)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        } else if (showMaxLengthError) {
+            Text(
+                text = "Maximum $maxCharacters characters allowed",
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.labelSmall,
+                modifier = Modifier.align(Alignment.Start)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
         // Button for the user to submit the query
         Button(
-            // When the button is clicked, call the onSubmit function with the query
-            onClick = { onSubmit(query) },
+            onClick = {
+                if (query.isBlank()) {
+                    showEmptyError = true
+                } else if (query.length > maxCharacters) {
+                    showMaxLengthError = true
+                } else {
+                    onSubmit(query)
+                }
+            },
             modifier = Modifier.fillMaxWidth(),
-            enabled = query.isNotBlank() && !isLoading
+            enabled = !isLoading
         ) {
             // Display a loading indicator and text when the button is clicked
             if (isLoading) {

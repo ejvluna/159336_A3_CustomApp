@@ -2,12 +2,14 @@
 
 package com.example.customapp.data.database
 
+// Import required packages for functionality
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
 // Abstract class that extends RoomDatabase to define the database schema.
+// RESOURCE MANAGEMENT: Singleton pattern with thread-safe initialization ensures single database instance which is kept in memory for app lifetime to avoid memory waste
 @Database(entities = [ClaimHistoryEntity::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     // Abstract function that returns the DAO (Data Access Object) for database operations. Subclasses must implement this for CRUD operations.

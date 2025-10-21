@@ -19,11 +19,14 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import com.example.customapp.data.model.VerificationResult
 import java.text.SimpleDateFormat
 import java.util.*
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.customapp.ui.theme.CustomAppTheme
+import com.example.customapp.ui.theme.*
+
 
 // -------------------------------------------------------------------------------------------------
 // Composable: to display the various UI components of the history screen
@@ -49,7 +52,8 @@ fun HistoryScreen(
         Text(
             text = "Verification History",
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
+            textAlign = TextAlign.Center
         )
         // Show empty state if no history exists, otherwise display scrollable (lazy) list of results
         if (historyList.isEmpty()) {
@@ -191,17 +195,16 @@ private fun VerificationMetadata(
 // Composable to display a rating badge for a verification result
 fun RatingBadge(rating: VerificationResult.Rating) {
     val (label, color) = when (rating) {
-        VerificationResult.Rating.TRUE -> "True" to Color(0xFF4CAF50)
-        VerificationResult.Rating.FALSE -> "False" to Color(0xFFF44336)
-        VerificationResult.Rating.MISLEADING -> "Misleading" to Color(0xFFFFA000) // Orange
-        VerificationResult.Rating.UNABLE_TO_VERIFY -> "Unverified" to Color(0xFF9E9E9E) // Grey
+        VerificationResult.Rating.TRUE -> "True" to MaterialTheme.colorScheme.statusTrue
+        VerificationResult.Rating.FALSE -> "False" to MaterialTheme.colorScheme.statusFalse
+        VerificationResult.Rating.MISLEADING -> "Misleading" to MaterialTheme.colorScheme.statusMisleading
+        VerificationResult.Rating.UNABLE_TO_VERIFY -> "Unverified" to MaterialTheme.colorScheme.statusUnverified
     }
-    // Create a badge-like surface with rounded corners and a subtle color
+
     Surface(
         color = color.copy(alpha = 0.2f),
         shape = MaterialTheme.shapes.small
     ) {
-        // Display the rating label in a small text style with the rating color
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,

@@ -14,17 +14,18 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+import androidx.compose.ui.graphics.Color
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = Teal80,
+    secondary = Coral80,
+    tertiary = BlueGrey80
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
+    primary = Teal40,
+    secondary = Coral40,
+    tertiary = BlueGrey40
 )
 
 @Composable
@@ -57,3 +58,17 @@ fun CustomAppTheme(
         content = content
     )
 }
+
+
+// Extension to access status colors from the color scheme
+val androidx.compose.material3.ColorScheme.statusTrue: Color
+    get() = StatusTrue
+
+val androidx.compose.material3.ColorScheme.statusFalse: Color
+    get() = StatusFalse
+
+val androidx.compose.material3.ColorScheme.statusMisleading: Color
+    get() = StatusMisleading
+
+val androidx.compose.material3.ColorScheme.statusUnverified: Color
+    get() = StatusUnverified

@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.map
 import retrofit2.HttpException
 
 // Class to handle API calls and database operations: input parameters are SonarApiService and ClaimHistoryDao
+// RESOURCE MANAGEMENT: This repository is stateless and doesn't hold resources that need cleanup
 class PerplexityRepository(
     private val apiService: SonarApiService,
     private val claimHistoryDao: ClaimHistoryDao
