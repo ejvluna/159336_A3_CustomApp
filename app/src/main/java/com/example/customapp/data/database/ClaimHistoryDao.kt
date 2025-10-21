@@ -1,31 +1,27 @@
 // data/database/ClaimHistoryDao.kt
 package com.example.customapp.data.database
-
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
-// Data Access Object (DAO) interface for claim history
+// DAO interface for managing claim history records in the local Room database
 @Dao
 interface ClaimHistoryDao {
-    // Function to insert a claim into the database
+    // Function that inserts a new claim record and return its auto-generated ID
     @Insert
     suspend fun insertClaim(claim: ClaimHistoryEntity): Long
-    // Function to get all claims from the database
+    // Function that retrieves all claims sorted by most recent first; returns a Flow for real-time updates
     @Query("SELECT * FROM claim_history ORDER BY timestamp DESC")
     fun getAllClaims(): Flow<List<ClaimHistoryEntity>>
-    // Function to get a claim by ID
+    // Function that retrieves a single claim by its ID; returns null if not found
     @Query("SELECT * FROM claim_history WHERE id = :id")
     suspend fun getClaimById(id: Int): ClaimHistoryEntity?
-    // Function to delete a claim by ID
+    // Function that deletes a claim by its ID
     @Query("DELETE FROM claim_history WHERE id = :id")
     suspend fun deleteClaimById(id: Int)
-    // Function to delete a claim
-    @Delete
-    suspend fun deleteClaim(claim: ClaimHistoryEntity)
-    // Function to delete all claims
+    // Function that clears all existing claims from the database
     @Query("DELETE FROM claim_history")
     suspend fun deleteAllClaims()
 }

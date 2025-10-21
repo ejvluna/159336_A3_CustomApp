@@ -23,7 +23,7 @@ class PerplexityRepository(
     // Create and store an instance of Gson to parse JSON responses
     private val gson = Gson()
 
-    // Function to verify a query
+    // Function to verify if the provided query is factually correct
     suspend fun verifyQuery(query: String): VerificationResult {
         val tag = "PerplexityRepository"
 
@@ -47,7 +47,7 @@ class PerplexityRepository(
                 jsonSchema = SonarApiRequest.JsonSchema(schema = jsonSchema)
             )
 
-            // Build the request to the Sonar API: includes the query, model, temperature, max tokens, search domain filter, response format
+            // Build the request to the Sonar API: includes the query, model, temperature, max tokens, search domain filter, response format, and efficiency parameters
             val request = SonarApiRequest(
                 messages = listOf(
                     SonarApiRequest.Message(
@@ -67,7 +67,10 @@ Claim: $query"""
                 temperature = ApiConfig.DEFAULT_TEMPERATURE,
                 maxTokens = ApiConfig.DEFAULT_MAX_TOKENS,
                 searchDomainFilter = ApiConfig.DEFAULT_SEARCH_DOMAIN_FILTER,
-                responseFormat = responseFormat
+                responseFormat = responseFormat,
+                maxTokensPerPage = ApiConfig.DEFAULT_MAX_TOKENS_PER_PAGE,
+                maxResults = ApiConfig.DEFAULT_MAX_RESULTS,
+                numSources = ApiConfig.DEFAULT_NUM_SOURCES
             )
             // Set the API key in the header for authentication
             val authHeader = "Bearer ${ApiConfig.API_KEY}"
@@ -92,6 +95,8 @@ Claim: $query"""
             // Store the citations from the API response
             val apiCitations = response.citations ?: emptyList()
             parseApiResponse(query, content, apiCitations)
+
+            // Catch block for handling exceptions gracefully without crashing the app
 
             // Handle HTTP exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
         } catch (e: HttpException) {
@@ -161,11 +166,13 @@ Claim: $query"""
         return claimHistoryDao.getAllClaims().map { entities ->
             entities.map { entity ->
                 VerificationResult(
+                    id = entity.id,
                     claim = entity.query,
                     rating = VerificationResult.Rating.valueOf(entity.result),
-                    summary = entity.status,
+                    summary = entity.summary,
                     explanation = entity.citations,
-                    citations = parseCitations(entity.citations)
+                    citations = parseCitations(entity.citations),
+                    timestamp = entity.timestamp
                 )
             }
         }
@@ -176,7 +183,7 @@ Claim: $query"""
         val entity = ClaimHistoryEntity(
             query = result.claim,
             result = result.rating.name,
-            status = result.summary,
+            summary = result.summary,
             citations = gson.toJson(result.citations),
             timestamp = System.currentTimeMillis()
         )
@@ -194,22 +201,28 @@ Claim: $query"""
         
         // Parse JSON response (without citations - those come from API response)
         val jsonObject = gson.fromJson(content, com.google.gson.JsonObject::class.java)
-        
+
+        // Store the rating from the API response (default to UNABLE_TO_VERIFY if not found)
         val ratingStr = jsonObject.get("rating")?.asString ?: "UNABLE_TO_VERIFY"
+
+        // Set the rating based on the rating string
         val rating = when (ratingStr.uppercase()) {
-            "TRUE" -> VerificationResult.Rating.TRUE
-            "FALSE" -> VerificationResult.Rating.FALSE
+            "TRUE", "MOSTLY_TRUE" -> VerificationResult.Rating.TRUE
+            "FALSE", "MOSTLY_FALSE" -> VerificationResult.Rating.FALSE
             "MISLEADING" -> VerificationResult.Rating.MISLEADING
             "UNABLE_TO_VERIFY" -> VerificationResult.Rating.UNABLE_TO_VERIFY
             else -> VerificationResult.Rating.UNABLE_TO_VERIFY
         }
-        
+
+        // Store the summary and explanation from the API response
         val summary = jsonObject.get("summary")?.asString ?: ""
         val explanation = jsonObject.get("explanation")?.asString ?: ""
-        
+
+        // Log the parsed response for debugging
         Log.d(tag, "Parsed JSON response: rating=$ratingStr, citations=${apiCitations.size}")
         apiCitations.forEach { Log.d(tag, "  Citation: $it") }
-        
+
+        // Return the parsed response
         return VerificationResult(
             claim = claim,
             rating = rating,
@@ -228,183 +241,4 @@ Claim: $query"""
         }
     }
 
-    // Function to test the API connection
-    suspend fun testApiConnection(): TestResult {
-        val tag = "PerplexityRepository"
-        return try {
-            Log.d(tag, "=== Starting API Connection Test ===")
-            
-            Log.d(tag, "Step 1: Verifying API Key")
-            val apiKey = ApiConfig.API_KEY
-            if (apiKey.isBlank() || apiKey == "your_api_key_here") {
-                Log.e(tag, "API Key is missing or not configured")
-                return TestResult(
-                    success = false,
-                    message = "API Key is missing or not configured",
-                    details = "Please set PERPLEXITY_API_KEY in secrets.properties"
-                )
-            }
-            Log.d(tag, "✓ API Key found (length: ${apiKey.length})")
-            
-            Log.d(tag, "Step 2: Creating test request")
-            val testQuery = "Is the Earth round?"
-            val request = SonarApiRequest(
-                messages = listOf(
-                    SonarApiRequest.Message(
-                        role = "user",
-                        content = "Fact-check this claim briefly: $testQuery"
-                    )
-                ),
-                model = ApiConfig.MODEL_SONAR,
-                temperature = ApiConfig.DEFAULT_TEMPERATURE,
-                maxTokens = ApiConfig.DEFAULT_MAX_TOKENS,
-                searchDomainFilter = ApiConfig.DEFAULT_SEARCH_DOMAIN_FILTER
-            )
-            Log.d(tag, "✓ Request created: model=${request.model}, maxTokens=${request.maxTokens}")
-            Log.d(tag, "✓ Search domain filter: ${request.searchDomainFilter.take(100)}...")
-            
-            Log.d(tag, "Step 3: Sending API request")
-            val authHeader = "Bearer $apiKey"
-            Log.d(tag, "✓ Auth header prepared (Bearer token)")
-            
-            val response = apiService.verifyClaim(authHeader, request)
-            Log.d(tag, "✓ API response received")
-            
-            Log.d(tag, "Step 4: Parsing response")
-            Log.d(tag, "Response ID: ${response.id}")
-            Log.d(tag, "Choices count: ${response.choices.size}")
-            Log.d(tag, "Usage - Prompt tokens: ${response.usage.promptTokens}, Completion tokens: ${response.usage.completionTokens}")
-            
-            val content = response.choices.firstOrNull()?.message?.content ?: ""
-            if (content.isBlank()) {
-                Log.w(tag, "Response content is empty")
-                return TestResult(
-                    success = false,
-                    message = "API returned empty response",
-                    details = "Response choices were empty or message content was blank"
-                )
-            }
-            Log.d(tag, "✓ Response content length: ${content.length} characters")
-            Log.d(tag, "Response preview: ${content.take(150)}...")
-            
-            val citations = response.citations ?: emptyList()
-            Log.d(tag, "✓ Citations from API: ${citations.size} found")
-            citations.forEach { Log.d(tag, "  - $it") }
-            
-            Log.d(tag, "=== API Connection Test SUCCESSFUL ===")
-            TestResult(
-                success = true,
-                message = "API connection verified successfully",
-                details = "Test query: '$testQuery'\nResponse length: ${content.length} chars\nCitations found: ${citations.size}\nTokens used: ${response.usage.promptTokens + response.usage.completionTokens}"
-            )
-        } catch (e: Exception) {
-            Log.e(tag, "=== API Connection Test FAILED ===", e)
-            Log.e(tag, "Error type: ${e::class.simpleName}")
-            Log.e(tag, "Error message: ${e.message}")
-            TestResult(
-                success = false,
-                message = "API connection test failed",
-                details = "${e::class.simpleName}: ${e.message}"
-            )
-        }
-    }
-
-    // Function to test domain filtering is working (only allowed domains should be used)
-    suspend fun testDomainFiltering(): TestResult {
-        val tag = "PerplexityRepository"
-        return try {
-            Log.d(tag, "=== Starting Domain Filtering Test ===")
-            
-            Log.d(tag, "Step 1: Verifying trusted sources list")
-            val trustedDomains = TrustedSources.DOMAINS
-            Log.d(tag, "✓ Trusted domains count: ${trustedDomains.size}")
-            trustedDomains.forEach { Log.d(tag, "  - $it") }
-            
-            Log.d(tag, "Step 2: Creating request with domain filter")
-            val testQuery = "What are the health benefits of exercise?"
-            val request = SonarApiRequest(
-                messages = listOf(
-                    SonarApiRequest.Message(
-                        role = "user",
-                        content = "Answer this question based only on trusted sources: $testQuery"
-                    )
-                ),
-                model = ApiConfig.MODEL_SONAR,
-                temperature = ApiConfig.DEFAULT_TEMPERATURE,
-                maxTokens = ApiConfig.DEFAULT_MAX_TOKENS,
-                searchDomainFilter = ApiConfig.DEFAULT_SEARCH_DOMAIN_FILTER
-            )
-            Log.d(tag, "✓ Request created with search_domain_filter")
-            
-            Log.d(tag, "Step 3: Sending request to API")
-            val authHeader = "Bearer ${ApiConfig.API_KEY}"
-            val response = apiService.verifyClaim(authHeader, request)
-            Log.d(tag, "✓ Response received from API")
-            
-            Log.d(tag, "Step 4: Analyzing response for trusted domain citations")
-            val content = response.choices.firstOrNull()?.message?.content ?: ""
-            Log.d(tag, "Response length: ${content.length} characters")
-            
-            val citedUrls = response.citations ?: emptyList()
-            Log.d(tag, "✓ URLs from API: ${citedUrls.size}")
-            citedUrls.forEach { Log.d(tag, "  - $it") }
-            
-            Log.d(tag, "Step 5: Verifying citations are from trusted sources")
-            val trustedCitations = mutableListOf<String>()
-            val untrustedCitations = mutableListOf<String>()
-            
-            citedUrls.forEach { url ->
-                val isTrusted = trustedDomains.any { domain -> url.contains(domain, ignoreCase = true) }
-                if (isTrusted) {
-                    trustedCitations.add(url)
-                    Log.d(tag, "✓ TRUSTED: $url")
-                } else {
-                    untrustedCitations.add(url)
-                    Log.d(tag, "✗ UNTRUSTED: $url")
-                }
-            }
-            
-            Log.d(tag, "Step 6: Checking for domain filter effectiveness")
-            val responseContainsTrustedDomainNames = trustedDomains.any { domain ->
-                content.contains(domain, ignoreCase = true)
-            }
-            Log.d(tag, "Response mentions trusted domains: $responseContainsTrustedDomainNames")
-            
-            val success = untrustedCitations.isEmpty()
-            val message = if (success) {
-                "Domain filtering verified successfully"
-            } else {
-                "Warning: Found citations from untrusted sources"
-            }
-            
-            Log.d(tag, "=== Domain Filtering Test COMPLETE ===")
-            TestResult(
-                success = success,
-                message = message,
-                details = """Trusted domains in filter: ${trustedDomains.size}
-                |URLs extracted from response: ${citedUrls.size}
-                |Trusted citations: ${trustedCitations.size}
-                |Untrusted citations: ${untrustedCitations.size}
-                |Response mentions trusted sources: $responseContainsTrustedDomainNames
-                |Test query: '$testQuery'
-                |Tokens used: ${response.usage.promptTokens + response.usage.completionTokens}
-                """.trimMargin()
-            )
-        } catch (e: Exception) {
-            Log.e(tag, "=== Domain Filtering Test FAILED ===", e)
-            Log.e(tag, "Error: ${e.message}")
-            TestResult(
-                success = false,
-                message = "Domain filtering test failed",
-                details = "${e::class.simpleName}: ${e.message}"
-            )
-        }
-    }
-
-    // Data class to encapsulate the fields that make up the test results
-    data class TestResult(
-        val success: Boolean,
-        val message: String,
-        val details: String
-    )
 }
