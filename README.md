@@ -1,7 +1,3 @@
-
-
-```markdown name=README.md
-
 **Last Updated**: 23 October 2025
 
 ## 📋 Table of Contents
