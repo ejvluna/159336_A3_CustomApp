@@ -28,9 +28,11 @@ data class ClaimHistoryEntity(
     val query: String,
     // The result (rating) returned by SonarAPI: TRUE, FALSE, MISLEADING, UNABLE_TO_VERIFY
     val result: String,
-    // The summary/explanation of the verification result from SonarAPI
+    // The summary of the verification result from SonarAPI
     val summary: String,
-    // The citations provided by SonarAPI for the result
+    // The detailed explanation of the verification result from SonarAPI
+    val explanation: String,
+    // The citations provided by SonarAPI for the result (stored as JSON string)
     val citations: String,
     // The timestamp of the query for sorting and display purposes
     val timestamp: Long

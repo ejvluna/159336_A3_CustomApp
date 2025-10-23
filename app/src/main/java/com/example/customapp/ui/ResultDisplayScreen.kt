@@ -23,7 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -44,7 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import com.example.customapp.ui.theme.*
 
 // -------------------------------------------------------------------------------------------------
-// Composables
+// Composable
 // -------------------------------------------------------------------------------------------------
 
 // Composable to display the result of a verification query
@@ -79,7 +78,7 @@ fun ResultDisplayScreen(
         StatusIndicator(rating = result.rating)
         Spacer(modifier = Modifier.height(20.dp))
 
-        // For each sub-section reuse the SectionHeader and SectionContent composables
+        // For each sub-section reuse the SectionHeader and SectionContent composable
         SectionHeader(icon = Icons.Filled.Search, title = "Claim")
         // Display the claim text in a surface with padding to make it visually distinct from the rest of the screen
         Surface(
@@ -148,10 +147,11 @@ fun SectionContent(text: String, textStyle: androidx.compose.ui.text.TextStyle =
     )
 }
 
-// Reusable composable for displaying citations
+// Reusable composable for displaying citations with title, URL, and publication date
+// Updated May 2025: Now displays full citation information from search_results API field
 @Composable
 fun CitationsList(
-    citations: List<String>,
+    citations: List<VerificationResult.Citation>,
     uriHandler: androidx.compose.ui.platform.UriHandler
 ) {
     Column(
@@ -160,22 +160,52 @@ fun CitationsList(
             .padding(bottom = 16.dp)
     ) {
         citations.forEach { citation ->
-            Text(
-                text = citation,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    textDecoration = TextDecoration.Underline
-                ),
-                color = MaterialTheme.colorScheme.primary,
+            // Create a clickable card for each citation with title, URL, and optional date
+            Surface(
                 modifier = Modifier
-                    .padding(vertical = 4.dp)
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
                     .clickable {
                         try {
-                            uriHandler.openUri(citation)
+                            uriHandler.openUri(citation.url)
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
+                    },
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = MaterialTheme.shapes.small
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp)
+                ) {
+                    // Display the citation title
+                    Text(
+                        text = citation.title,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            textDecoration = TextDecoration.Underline
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    // Display the citation URL
+                    Text(
+                        text = citation.url,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 4.dp)
+                    )
+                    // Display the publication date if available
+                    if (!citation.date.isNullOrEmpty()) {
+                        Text(
+                            text = "Published: ${citation.date}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.outline
+                        )
                     }
-            )
+                }
+            }
         }
     }
 }
@@ -234,13 +264,13 @@ fun StatusIndicator(rating: VerificationResult.Rating) {
     }
 }
 
-// Helper function to create preview data
+// Helper function to create preview data with Citation objects
 private fun createPreviewResult(
     claim: String,
     rating: VerificationResult.Rating,
     summary: String,
     explanation: String,
-    citations: List<String>
+    citations: List<VerificationResult.Citation>
 ) = VerificationResult(
     id = 0,
     claim = claim,
@@ -267,8 +297,16 @@ fun ResultDisplayScreenPreviewTrue() {
                 summary = "This claim is supported by scientific evidence and observations.",
                 explanation = "The spherical shape of the Earth has been confirmed through multiple methods including satellite imagery, physics, and direct observation. This is one of the most well-established facts in science.",
                 citations = listOf(
-                    "https://www.nasa.gov/earth",
-                    "https://www.britannica.com/science/Earth"
+                    VerificationResult.Citation(
+                        title = "NASA - Earth",
+                        url = "https://www.nasa.gov/earth",
+                        date = "2024-01-15"
+                    ),
+                    VerificationResult.Citation(
+                        title = "Britannica - Earth",
+                        url = "https://www.britannica.com/science/Earth",
+                        date = "2023-12-20"
+                    )
                 )
             ),
             onNewQuery = {}
@@ -287,8 +325,16 @@ fun ResultDisplayScreenPreviewFalse() {
                 summary = "This claim is false. Multiple large-scale studies have found no link between vaccines and autism.",
                 explanation = "The original study claiming a vaccine-autism link has been thoroughly discredited and retracted. Numerous subsequent studies involving millions of children have found no connection between vaccines and autism. The scientific consensus is clear that vaccines do not cause autism.",
                 citations = listOf(
-                    "https://www.cdc.gov/vaccinesafety/concerns/autism.html",
-                    "https://www.who.int/news-room/fact-sheets/detail/immunization-vaccines-and-biologicals"
+                    VerificationResult.Citation(
+                        title = "CDC - Vaccine Safety",
+                        url = "https://www.cdc.gov/vaccinesafety/concerns/autism.html",
+                        date = "2024-02-10"
+                    ),
+                    VerificationResult.Citation(
+                        title = "WHO - Immunization",
+                        url = "https://www.who.int/news-room/fact-sheets/detail/immunization-vaccines-and-biologicals",
+                        date = "2024-01-05"
+                    )
                 )
             ),
             onNewQuery = {}
@@ -307,8 +353,16 @@ fun ResultDisplayScreenPreviewMisleading() {
                 summary = "This claim is misleading. While excessive coffee consumption can have negative effects, moderate consumption has been shown to have health benefits.",
                 explanation = "Research shows that moderate coffee consumption (3-5 cups per day) is associated with various health benefits, including reduced risk of certain diseases. However, excessive consumption can lead to anxiety, sleep issues, and other problems. The health effects depend on individual factors and consumption amount.",
                 citations = listOf(
-                    "https://www.healthline.com/nutrition/coffee-health-benefits",
-                    "https://www.mayoclinic.org/healthy-lifestyle/nutrition-and-healthy-eating/in-depth/caffeine/art-20045431"
+                    VerificationResult.Citation(
+                        title = "Healthline - Coffee Health Benefits",
+                        url = "https://www.healthline.com/nutrition/coffee-health-benefits",
+                        date = "2024-03-01"
+                    ),
+                    VerificationResult.Citation(
+                        title = "Mayo Clinic - Caffeine",
+                        url = "https://www.mayoclinic.org/healthy-lifestyle/nutrition-and-healthy-eating/in-depth/caffeine/art-20045431",
+                        date = "2024-02-15"
+                    )
                 )
             ),
             onNewQuery = {}
@@ -327,8 +381,16 @@ fun ResultDisplayScreenPreviewUnableToVerify() {
                 summary = "This claim cannot be verified with current evidence.",
                 explanation = "There is no credible evidence to support the claim that ancient aliens built the pyramids. However, it's difficult to definitively prove a negative. The mainstream archaeological consensus is that the pyramids were built by ancient Egyptians using sophisticated engineering techniques for their time.",
                 citations = listOf(
-                    "https://www.nationalgeographic.com/history/archaeology/giza-pyramids/",
-                    "https://www.smithsonianmag.com/history/ancient-egypt-shipping-mining-farming-economy-pyramids-180956619/"
+                    VerificationResult.Citation(
+                        title = "National Geographic - Giza Pyramids",
+                        url = "https://www.nationalgeographic.com/history/archaeology/giza-pyramids/",
+                        date = "2024-01-20"
+                    ),
+                    VerificationResult.Citation(
+                        title = "Smithsonian - Ancient Egypt",
+                        url = "https://www.smithsonianmag.com/history/ancient-egypt-shipping-mining-farming-economy-pyramids-180956619/",
+                        date = "2023-11-10"
+                    )
                 )
             ),
             onNewQuery = {}

@@ -21,9 +21,17 @@ data class VerificationResult(
     val rating: Rating,
     val summary: String,
     val explanation: String,
-    val citations: List<String>,
+    val citations: List<Citation>,
     val timestamp: Long = System.currentTimeMillis()
 ) {
+    // Data class representing a citation with title, URL, and optional publication date
+    // Updated May 2025: Perplexity API now returns search_results with detailed source information
+    data class Citation(
+        val title: String,
+        val url: String,
+        val date: String? = null
+    )
+
     // Enum class to represent the available ratings for a verification result
     enum class Rating {
         TRUE,

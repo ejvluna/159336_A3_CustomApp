@@ -13,7 +13,6 @@ package com.example.customapp.data
 // Import required packages to perform API calls and database operations
 import android.util.Log
 import com.example.customapp.config.ApiConfig
-import com.example.customapp.config.TrustedSources
 import com.example.customapp.data.api.SonarApiRequest
 import com.example.customapp.data.api.SonarApiService
 import com.example.customapp.data.database.ClaimHistoryDao
@@ -56,14 +55,18 @@ class PerplexityRepository(
                 messages = listOf(
                     SonarApiRequest.Message(
                         role = "user",
-                        content = """Fact-check the following claim and provide a rating with these definitions:
-- TRUE: The claim is fully supported by credible evidence
-- FALSE: The claim is contradicted by credible evidence
-- MISLEADING: The claim contains some truth but is presented deceptively or lacks important context
-- UNABLE_TO_VERIFY: There is insufficient evidence to verify the claim
+                        content = """ Analyze the claim using trusted sources and determine its factual rating using the categories defined below.
 
-Provide a concise summary and detailed explanation with citations from trusted sources.
+RATING DEFINITIONS:
+- TRUE: Fully supported by credible evidence.
+- FALSE: Directly contradicted by credible evidence.
+- MISLEADING: Contains partial truths but omits essential context or is presented in a deceptive way.
+- UNABLE_TO_VERIFY: Insufficient or inconclusive evidence is available.
 
+RESPONSE REQUIREMENTS:
+- Provide a concise summary and detailed explanation with citations from trusted sources.
+- For TRUE, FALSE, and MISLEADING ratings, you MUST provide at least 2 credible citations from trusted sources to support your rating. For UNABLE_TO_VERIFY, this is not required as it may not apply.
+- Use clear, neutral, and concise language suitable for general readers, so the reader understands both result and reasoning.
 Claim: $query"""
                     )
                 ),
@@ -95,8 +98,15 @@ Claim: $query"""
             }
             // Otherwise log the success and parse the API response
             Log.d(tag, "Query verified successfully")
-            // Store the citations from the API response
-            val apiCitations = response.citations ?: emptyList()
+            // Extract citations from search_results (May 2025 API update: citations field deprecated, now using search_results)
+            Log.d(tag, "Raw API response: ${gson.toJson(response)}")
+            Log.d(tag, "Search results count: ${response.searchResults?.size ?: 0}")
+            response.searchResults?.forEach { result ->
+                Log.d(tag, "  Citation: ${result.title} - ${result.url} (${result.date})")
+            }
+            val apiCitations = response.searchResults?.map { 
+                VerificationResult.Citation(title = it.title, url = it.url, date = it.date)
+            } ?: emptyList()
             parseApiResponse(query, content, apiCitations)
             // Handle HTTP exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
         } catch (e: HttpException) {
@@ -159,7 +169,7 @@ Claim: $query"""
 
     // Class Function to get the history of queries from the database
     fun getHistory(): Flow<List<VerificationResult>> {
-        // R
+        // Retrieve all claims from the database and convert them to VerificationResult objects
         return claimHistoryDao.getAllClaims().map { entities ->
             entities.map { entity ->
                 VerificationResult(
@@ -167,7 +177,7 @@ Claim: $query"""
                     claim = entity.query,
                     rating = VerificationResult.Rating.valueOf(entity.result),
                     summary = entity.summary,
-                    explanation = entity.citations,
+                    explanation = entity.explanation,
                     citations = parseCitations(entity.citations),
                     timestamp = entity.timestamp
                 )
@@ -181,6 +191,7 @@ Claim: $query"""
             query = result.claim,
             result = result.rating.name,
             summary = result.summary,
+            explanation = result.explanation,
             citations = gson.toJson(result.citations),
             timestamp = System.currentTimeMillis()
         )
@@ -192,8 +203,8 @@ Claim: $query"""
         claimHistoryDao.deleteClaimById(id)
     }
 
-    // Class Function to parse the API response
-    private fun parseApiResponse(claim: String, content: String, apiCitations: List<String>): VerificationResult {
+    // Class Function to parse the API response and extract rating, summary, and explanation
+    private fun parseApiResponse(claim: String, content: String, apiCitations: List<VerificationResult.Citation>): VerificationResult {
         val tag = "PerplexityRepository"
         // Parse JSON response (without citations - those come from API response)
         val jsonObject = gson.fromJson(content, com.google.gson.JsonObject::class.java)
@@ -212,7 +223,7 @@ Claim: $query"""
         val explanation = jsonObject.get("explanation")?.asString ?: ""
         // Log the parsed response for debugging
         Log.d(tag, "Parsed JSON response: rating=$ratingStr, citations=${apiCitations.size}")
-        apiCitations.forEach { Log.d(tag, "  Citation: $it") }
+        apiCitations.forEach { Log.d(tag, "  Citation: ${it.title} - ${it.url}") }
         // Return the parsed response
         return VerificationResult(
             claim = claim,
@@ -223,13 +234,23 @@ Claim: $query"""
         )
     }
 
-    // Class Function to parse the citations from the API response
-    private fun parseCitations(citationsJson: String): List<String> {
-        // Call Gson to parse the citations from the API response into a list of strings
+    // Class Function to parse the citations from the database and convert them to Citation objects
+    // Handles both old format (List<String>) and new format (List<Citation>) for backward compatibility
+    private fun parseCitations(citationsJson: String): List<VerificationResult.Citation> {
         return try {
-            gson.fromJson(citationsJson, Array<String>::class.java).toList()
+            // Try to parse as Citation objects first (new format)
+            val citationArray = gson.fromJson(citationsJson, Array<VerificationResult.Citation>::class.java)
+            citationArray.toList()
         } catch (e: Exception) {
-            emptyList()
+            // Fallback: try to parse as strings (old format) and convert to Citation objects
+            try {
+                val urlArray = gson.fromJson(citationsJson, Array<String>::class.java)
+                urlArray.map { url ->
+                    VerificationResult.Citation(title = url, url = url, date = null)
+                }
+            } catch (e2: Exception) {
+                emptyList()
+            }
         }
     }
 

@@ -16,7 +16,9 @@ package com.example.customapp.data.api
 
 import com.google.gson.annotations.SerializedName
 
-// Data class that maps the JSON response from the Perplexity Sonar API. Contains the model's response choices, token usage, and citations.
+// Data class that maps the JSON response from the Perplexity Sonar API. Contains the model's response choices, token usage, and search results.
+// NOTE: As of May 2025, the API returns 'search_results' instead of the deprecated 'citations' field.
+// Each search result includes title, URL, and publication date for better source tracking.
 data class SonarApiResponse(
     @SerializedName("id")
     val id: String,
@@ -24,9 +26,19 @@ data class SonarApiResponse(
     val choices: List<Choice>,
     @SerializedName("usage")
     val usage: Usage,
-    @SerializedName("citations")
-    val citations: List<String>? = null
+    @SerializedName("search_results")
+    val searchResults: List<SearchResult>? = null
 ) {
+    // Nested data class representing a search result from the API response (May 2025 update)
+    // Contains title, URL, and publication date for comprehensive source information
+    data class SearchResult(
+        @SerializedName("title")
+        val title: String,
+        @SerializedName("url")
+        val url: String,
+        @SerializedName("date")
+        val date: String? = null
+    )
     // Nested data class representing a single response choice from the model (the API can return multiple choices)
     data class Choice(
         @SerializedName("message")

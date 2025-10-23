@@ -107,11 +107,12 @@ fun HistoryItem(
                     .fillMaxWidth()
                     .padding(12.dp),
                 // Use SpaceBetween to space out the history item content and delete button
-                horizontalArrangement = Arrangement.SpaceBetween,
+                //horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Call the HistoryItemContent composable to display the claim preview, rating, and timestamp inside the clickable card (far left)
                 HistoryItemContent(
+                    modifier = Modifier.weight(1f), // <-- ADD THIS MODIFIER
                     claim = result.claim,
                     rating = result.rating,
                     timestamp = result.timestamp
@@ -154,13 +155,14 @@ private fun ClickableHistoryCard(
 // Composable that displays the claim preview, rating, and timestamp
 @Composable
 private fun HistoryItemContent(
+    modifier: Modifier = Modifier,
     claim: String,
     rating: VerificationResult.Rating,
     timestamp: Long
 ) {
     // Column to hold the history item content
     Column(
-        modifier = Modifier
+        modifier = modifier
             .padding(end = 12.dp)
     ) {
         // Call the TruncatedClaimText composable to display the claim preview
@@ -340,7 +342,13 @@ fun HistoryScreenPreviewWithItems() {
                     rating = VerificationResult.Rating.TRUE,
                     summary = "This claim is supported by scientific evidence.",
                     explanation = "Multiple observations confirm Earth's spherical shape.",
-                    citations = listOf("https://www.nasa.gov"),
+                    citations = listOf(
+                        VerificationResult.Citation(
+                            title = "NASA - Earth",
+                            url = "https://www.nasa.gov",
+                            date = "2024-01-15"
+                        )
+                    ),
                     timestamp = System.currentTimeMillis()
                 ),
                 VerificationResult(
@@ -349,7 +357,13 @@ fun HistoryScreenPreviewWithItems() {
                     rating = VerificationResult.Rating.MISLEADING,
                     summary = "Partially true - depends on consumption amount.",
                     explanation = "Moderate consumption has benefits, excessive consumption has risks.",
-                    citations = listOf("https://www.healthline.com"),
+                    citations = listOf(
+                        VerificationResult.Citation(
+                            title = "Healthline - Coffee Health",
+                            url = "https://www.healthline.com",
+                            date = "2024-02-10"
+                        )
+                    ),
                     timestamp = System.currentTimeMillis() - 3600000
                 ),
                 VerificationResult(
@@ -358,7 +372,13 @@ fun HistoryScreenPreviewWithItems() {
                     rating = VerificationResult.Rating.FALSE,
                     summary = "This claim is false.",
                     explanation = "Multiple studies have found no link between vaccines and autism.",
-                    citations = listOf("https://www.cdc.gov"),
+                    citations = listOf(
+                        VerificationResult.Citation(
+                            title = "CDC - Vaccine Safety",
+                            url = "https://www.cdc.gov",
+                            date = "2024-01-20"
+                        )
+                    ),
                     timestamp = System.currentTimeMillis() - 7200000
                 ),
                 VerificationResult(
