@@ -2,10 +2,9 @@
 /**
  * History Screen - Displays a scrollable list of past verification results.
  *
- * This screen shows all previously verified claims with their status, summary, and timestamps.
- * The list is automatically sorted by most recent and updates reactively when data changes.
- *
- * */
+ * This screen uses a ViewModel to manage the list of past claims from Room database.
+ * The list is automatically updated via Flow when the database changes.
+ */
 
 package com.example.customapp.ui
 
@@ -19,20 +18,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import com.example.customapp.data.model.VerificationResult
+import com.example.customapp.data.PerplexityRepository
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.customapp.ui.theme.CustomAppTheme
 import com.example.customapp.ui.theme.*
 
 
@@ -43,13 +43,29 @@ import com.example.customapp.ui.theme.*
 @Composable
 // A composable to display a scrollable list of all past verification results with options to view or delete each item
 fun HistoryScreen(
-    // List of past verification results to display
-    historyList: List<VerificationResult>,
+    // Repository for data access
+    repository: PerplexityRepository,
     // Callback invoked when a history item is clicked to view the full verification result
-    onItemClick: (VerificationResult) -> Unit,
-    // Callback invoked when a history item is deleted by ID
-    onDelete: (Int) -> Unit
+    onItemClick: (VerificationResult) -> Unit
 ) {
+    // Create the ViewModel with the provided repository (simple instantiation, no factory needed)
+    val viewModel = remember { HistoryViewModel(repository) }
+    
+    // Observe the history list from the ViewModel
+    val historyList by viewModel.historyFlow.collectAsState()
+    
+    // Observe the delete error state from the ViewModel
+    val deleteError by viewModel.deleteError.collectAsState()
+
+    // Simple loading state to prevent empty state flash on first load
+    var isInitialLoading by remember { mutableStateOf(true) }
+
+    // Dismiss loading indicator after 300ms (enough time for database to emit)
+    LaunchedEffect(Unit) {
+        kotlinx.coroutines.delay(300)
+        isInitialLoading = false
+    }
+
     // Create a single column to display the history list
     Column(
         modifier = Modifier
@@ -63,8 +79,18 @@ fun HistoryScreen(
             modifier = Modifier.padding(bottom = 16.dp),
             textAlign = TextAlign.Center
         )
-        // Show empty state if no history exists, otherwise display scrollable (lazy) list of results
-        if (historyList.isEmpty()) {
+        // Show loading indicator during initial load, then show list or empty state
+        if (isInitialLoading) {
+            // Simple centered loading spinner
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else if (historyList.isEmpty()) {
             EmptyHistoryState()
         } else {
             LazyColumn(
@@ -79,7 +105,9 @@ fun HistoryScreen(
                     HistoryItem(
                         result = result,
                         onItemClick = { onItemClick(result) },
-                        onDelete = { onDelete(result.id) }
+                        onDelete = { viewModel.deleteQuery(result.id) },
+                        deleteError = deleteError,
+                        onClearError = { viewModel.clearDeleteError() }
                     )
                 }
             }
@@ -92,10 +120,22 @@ fun HistoryScreen(
 fun HistoryItem(
     result: VerificationResult,
     onItemClick: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    deleteError: String? = null,
+    onClearError: () -> Unit = {}
 ) {
     // Track whether the delete confirmation dialog is visible
     var showDeleteConfirm by remember { mutableStateOf(false) }
+
+    // Show error message if delete error exists and is not empty
+    var showDeleteError by remember { mutableStateOf(false) }
+
+    // Update showDeleteError when deleteError changes
+    LaunchedEffect(deleteError) {
+        if (deleteError != null && deleteError.isNotEmpty()) {
+            showDeleteError = true
+        }
+    }
 
     // Call the ClickableHistoryCard composable to display a clickable card for each history item
     ClickableHistoryCard(
@@ -112,7 +152,7 @@ fun HistoryItem(
             ) {
                 // Call the HistoryItemContent composable to display the claim preview, rating, and timestamp inside the clickable card (far left)
                 HistoryItemContent(
-                    modifier = Modifier.weight(1f), // <-- ADD THIS MODIFIER
+                    modifier = Modifier.weight(1f),
                     claim = result.claim,
                     rating = result.rating,
                     timestamp = result.timestamp
@@ -131,6 +171,45 @@ fun HistoryItem(
             showDeleteConfirm = false
         }
     )
+
+    // Show error message if delete fails
+    if (showDeleteError && deleteError != null && deleteError.isNotEmpty()) {
+        Spacer(modifier = Modifier.height(8.dp))
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.errorContainer,
+            shape = MaterialTheme.shapes.small
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = deleteError,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                    onClick = {
+                        showDeleteError = false
+                        onClearError()
+                    },
+                    modifier = Modifier.size(24.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        contentDescription = "Dismiss error",
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+        }
+    }
 }
 
 // Composable that displays a clickable card for a history item
@@ -329,83 +408,27 @@ fun EmptyHistoryState() {
 // Preview: to test the UI in the preview window
 // -------------------------------------------------------------------------------------------------
 
-@Preview(showBackground = true, showSystemUi = true)
-// Preview to show the history screen with some sample data
-@Composable
-fun HistoryScreenPreviewWithItems() {
-    CustomAppTheme {
-        HistoryScreen(
-            historyList = listOf(
-                VerificationResult(
-                    id = 1,
-                    claim = "The Earth is round",
-                    rating = VerificationResult.Rating.TRUE,
-                    summary = "This claim is supported by scientific evidence.",
-                    explanation = "Multiple observations confirm Earth's spherical shape.",
-                    citations = listOf(
-                        VerificationResult.Citation(
-                            title = "NASA - Earth",
-                            url = "https://www.nasa.gov",
-                            date = "2024-01-15"
-                        )
-                    ),
-                    timestamp = System.currentTimeMillis()
-                ),
-                VerificationResult(
-                    id = 2,
-                    claim = "Coffee is bad for health",
-                    rating = VerificationResult.Rating.MISLEADING,
-                    summary = "Partially true - depends on consumption amount.",
-                    explanation = "Moderate consumption has benefits, excessive consumption has risks.",
-                    citations = listOf(
-                        VerificationResult.Citation(
-                            title = "Healthline - Coffee Health",
-                            url = "https://www.healthline.com",
-                            date = "2024-02-10"
-                        )
-                    ),
-                    timestamp = System.currentTimeMillis() - 3600000
-                ),
-                VerificationResult(
-                    id = 3,
-                    claim = "Vaccines cause autism",
-                    rating = VerificationResult.Rating.FALSE,
-                    summary = "This claim is false.",
-                    explanation = "Multiple studies have found no link between vaccines and autism.",
-                    citations = listOf(
-                        VerificationResult.Citation(
-                            title = "CDC - Vaccine Safety",
-                            url = "https://www.cdc.gov",
-                            date = "2024-01-20"
-                        )
-                    ),
-                    timestamp = System.currentTimeMillis() - 7200000
-                ),
-                VerificationResult(
-                    id = 4,
-                    claim = "Ancient aliens built the pyramids",
-                    rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
-                    summary = "Insufficient evidence to verify this claim.",
-                    explanation = "There is no credible evidence to support this claim, but it cannot be definitively disproven with current archaeological knowledge.",
-                    citations = emptyList(),
-                    timestamp = System.currentTimeMillis() - 10800000
-                )
-            ),
-            onItemClick = {},
-            onDelete = {}
-        )
-    }
-}
+// Note: Preview requires a mock repository - skipping for now as it requires full dependency setup
+// To preview, you can temporarily create a mock PerplexityRepository or use the old parameter-based approach
+// @Preview(showBackground = true, showSystemUi = true)
+// @Composable
+// fun HistoryScreenPreviewWithItems() {
+//     CustomAppTheme {
+//         HistoryScreen(
+//             repository = mockRepository,
+//             onItemClick = {}
+//         )
+//     }
+// }
 
-@Preview(showBackground = true, showSystemUi = true)
-// Preview to show the history screen with no data
-@Composable
-fun HistoryScreenPreviewEmpty() {
-    CustomAppTheme {
-        HistoryScreen(
-            historyList = emptyList(),
-            onItemClick = {},
-            onDelete = {}
-        )
-    }
-}
+// Note: Preview requires a mock repository - skipping for now as it requires full dependency setup
+// @Preview(showBackground = true, showSystemUi = true)
+// @Composable
+// fun HistoryScreenPreviewEmpty() {
+//     CustomAppTheme {
+//         HistoryScreen(
+//             repository = mockRepository,
+//             onItemClick = {}
+//         )
+//     }
+// }

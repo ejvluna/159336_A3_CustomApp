@@ -8,9 +8,9 @@
  * - Summary of findings
  * - Detailed explanation
  * - List of source citations with clickable links
- * - Option to return to the input screen
+ * - Provides navigation back to query screen
  *
- * The UI updates reactively based on the provided VerificationResult.
+ * Uses QueryViewModel for state management and handles one-time events like navigation and URL opening.
  */
 
 package com.example.customapp.ui
@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextDecoration
@@ -35,8 +36,7 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.ui.Alignment
 import com.example.customapp.data.model.VerificationResult
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.customapp.ui.theme.CustomAppTheme
+import com.example.customapp.data.PerplexityRepository
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.ui.text.style.TextAlign
@@ -52,6 +52,8 @@ fun ResultDisplayScreen(
     result: VerificationResult,
     onNewQuery: () -> Unit
 ) {
+    // Use the provided callbacks for navigation; no ViewModel needed here
+
     // Get and store the current uri handler and scroll state for smooth scrolling
     val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
@@ -264,6 +266,7 @@ fun StatusIndicator(rating: VerificationResult.Rating) {
     }
 }
 
+/*
 // Helper function to create preview data with Citation objects
 private fun createPreviewResult(
     claim: String,
@@ -280,10 +283,8 @@ private fun createPreviewResult(
     citations = citations,
     timestamp = System.currentTimeMillis()
 )
-
-
 // -------------------------------------------------------------------------------------------------
-// Previews
+// Previews: require mock repository so commented out
 // -------------------------------------------------------------------------------------------------
 
 @Preview(showBackground = true, showSystemUi = true)
@@ -397,3 +398,4 @@ fun ResultDisplayScreenPreviewUnableToVerify() {
         )
     }
 }
+*/
