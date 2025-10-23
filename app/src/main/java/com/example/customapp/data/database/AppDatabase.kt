@@ -1,8 +1,19 @@
 // data/database/AppDatabase.kt
 
+/**
+ * Room database configuration for the Verifica app.
+ *
+ * This file contains:
+ * - AppDatabase: The main database class with version and entity definitions
+ * - Database access objects (DAOs) for each entity
+ * - Database migration strategies
+ * - Singleton pattern implementation for database access
+ *
+ * The database is used to store and retrieve verification history locally.
+ */
+
 package com.example.customapp.data.database
 
-// Import required packages for functionality
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room

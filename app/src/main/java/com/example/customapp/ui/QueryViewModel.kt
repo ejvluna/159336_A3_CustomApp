@@ -1,4 +1,18 @@
 // ui/QueryViewModel.kt
+
+/**
+ * ViewModel for managing the query input screen's state and business logic.
+ *
+ * This ViewModel handles:
+ * - Managing the query input state
+ * - Validating user input
+ * - Coordinating verification requests with the repository
+ * - Managing loading and error states
+ * - Processing verification results
+ *
+ * The UI state is exposed as StateFlow for reactive updates.
+ */
+
 package com.example.customapp.ui
 
 // Import packages for ViewModel lifecycle management, reactive state management with StateFlow, and coroutines

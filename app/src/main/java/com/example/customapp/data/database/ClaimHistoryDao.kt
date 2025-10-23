@@ -1,4 +1,17 @@
 // data/database/ClaimHistoryDao.kt
+
+/**
+ * Data Access Object (DAO) for verification history operations.
+ *
+ * This interface defines all database operations for the claim history feature:
+ * - Querying all verification results
+ * - Inserting new verification results
+ * - Deleting verification results by ID
+ * - Reactive data observation with Flow
+ *
+ * All database operations are executed on background threads automatically by Room.
+ */
+
 package com.example.customapp.data.database
 import androidx.room.Dao
 import androidx.room.Delete

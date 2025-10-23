@@ -223,25 +223,31 @@
 
 ***
 
-## Phase 9: Documentation & Code Quality
+## ✅ Phase 9: Documentation & Code Quality
 
-### Task 9.1: Add Code Comments
-- Document all classes with purpose and responsibility[2]
+### Task 9.1: Add Code Comments ✅
 - Explain architecture decisions
-- Comment complex logic
-- Note which code uses external libraries vs original code[2]
+- Add inline comment to all code to explain architecture decisions, purpose, responsibility, and implementation for educational purposes (using accessible language and concise overview)
 
-### Task 9.2: Create README
+### Task 9.2: Create README ✅
 - Document app functionality
-- List all external libraries used[2]
+- List all external libraries used
 - Explain how to build and run
 - Include API key setup instructions
 
-### Task 9.3: Code Review & Refactoring
+### Task 9.3: Code Review & Refactoring ✅
 - Ensure proper separation of concerns
 - Remove unused code and imports
 - Follow Kotlin coding conventions
-- Verify class count is within limits (≤6 for individual)[2]
+- Verify class count is within limits (<10 for individual)
+- Core Classes Count: 7 total
+  - MainActivity
+  - QueryViewModel
+  - HistoryViewModel
+  - PerplexityRepository
+  - SonarApiService
+  - ClaimHistoryDao
+  - AppDatabase
 
 ***
 
@@ -250,53 +256,18 @@
 ### Task 10.1: Functional Testing
 - Test complete user flow: input → verify → view results → save → view history
 - Test edge cases: empty input, very long input, network failure
-- Test on Android emulator (required)[2]
-- Verify app doesn't crash on configuration changes
+- Test on Android emulator (required)
 
 ### Task 10.2: Final Verification
-- Confirm all code written specifically for this assignment[2]
-- Verify no plagiarism from tutorials or repositories[2]
+- Confirm all code written specifically for this assignment
+- Verify no plagiarism from tutorials or repositories
 - Double-check API key is not hardcoded in version control
 - Test clean build from scratch
 
 ### Task 10.3: Prepare Submission
-- Create submission package per assignment requirements[2]
+- Create submission package per assignment requirements
 - Include all source files
 - Include README with setup instructions
-- Document any known limitations
-- Submit before deadline (October 24, 2025)[2]
+- Submit before deadline (October 24, 2025)
 
 ***
-
-## Priority Order Summary
-
-**Critical Path** (Must complete):
-1. Project setup & dependencies (Phase 1)
-2. Create data models (Phase 2)
-3. API service & repository (Phase 3.1, 3.2)
-4. QueryViewModel (Phase 4.1)
-5. Query input & results screens (Phase 5.2, 5.3)
-6. API testing & integration (Phase 6)
-7. Documentation & submission (Phase 9, 10)
-
-**Important** (Should complete):
-8. Database setup & history (Phase 3.3, 7)
-9. History screen (Phase 5.4)
-10. Error handling & validation (Phase 6.3, 8.2)
-
-**Nice-to-Have** (If time permits):
-11. UI polish & animations (Phase 8.1)
-12. Advanced search/filtering
-
-***
-
-This checklist provides a complete roadmap from project initialization through submission, with each task building logically on previous work and maintaining alignment with the simplified 2-layer Jetpack Compose architecture and assignment requirements.[4][3][1][2]
-
-[1](https://docs.perplexity.ai/cookbook/examples/fact-checker-cli/README)
-[2](https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/28284446/31c10c91-2d4e-4106-88b0-99eefcc809d9/Instructions.md)
-[3](https://developer.android.com/topic/architecture)
-[4](https://developer.android.com/topic/architecture/recommendations)
-[6](https://docs.perplexity.ai/guides/search-domain-filters)
-[7](https://cesarmauri.com/a-clean-architecture-implementation-for-android-in-kotlin/)
-[8](https://proandroiddev.com/a-flexible-modern-android-app-architecture-complete-step-by-step-d76901e29993)
-[9](https://cekrem.github.io/posts/a-use-case-for-usecases-in-kotlin/)

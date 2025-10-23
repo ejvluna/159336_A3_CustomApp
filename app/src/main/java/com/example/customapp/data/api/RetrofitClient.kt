@@ -1,4 +1,16 @@
 // /data/api/RetrofitClient.kt
+
+/**
+ * Retrofit client configuration for the Verifica app's API communication.
+ *
+ * This singleton object provides:
+ * - Pre-configured OkHttpClient with timeouts and retry logic
+ * - Retrofit instance with Gson converter
+ * - Base URL configuration from ApiConfig
+ * - Automatic JSON serialization/deserialization
+ *
+ * The client is lazily initialized and shared across the app for efficient network resource usage.
+ */
 package com.example.customapp.data.api
 
 // Import required packages to perform API calls and handle HTTP requests
@@ -10,7 +22,7 @@ import java.util.concurrent.TimeUnit
 
 // Singleton object that configures and provides single instances of Retrofit and OkHttpClient that are reused throughout app lifetime for API communication
 object RetrofitClient {
-    // OkHttpClient configured with 30-second timeouts for connection, read, and write operations; retries on connection failure
+    // Custom OkHttpClient with 30s timeouts and connection retry enabled.
     // Connection pooling is automatic - OkHttp reuses connections for multiple requests
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
@@ -20,7 +32,7 @@ object RetrofitClient {
             .retryOnConnectionFailure(true)
             .build()
     }
-    // Retrofit instance configured with the Perplexity API base URL and Gson converter for JSON serialization/deserialization
+    // Retrofit instance using the base URL from ApiConfig and a Gson converter.
     val retrofit: Retrofit by lazy {
         Retrofit.Builder()
             .baseUrl(ApiConfig.BASE_URL)

@@ -1,30 +1,29 @@
 // /config/TrustedSources.kt
 package com.example.customapp.config
 
-// Pre-defined trusted sources for fact-checking.Used in search_domain_filter parameter to ensure information comes from reliable sources only.
-// Limit is 20 per SonarAPI documentation: https://docs.perplexity.ai/guides/search-quickstart
-
+// Pre-defined trusted domains for Sonar API search filtering implemented as a Kotlin `object` for lazy initialization and single instance guarantee
 object TrustedSources {
+    // Domains are listed to 20 per Sonar API documentation, and organized by source type for maintainability and clarity
     val DOMAINS = listOf(
-        // News organizations: only internationally recognized media outlets with established editorial standards, fact-checking processes, and a reputation for accurate, unbiased reporting across global events
+        // News organizations: Reuters, AP News, NPR, BBC, The Guardian
         "reuters.com",
         "apnews.com",
         "npr.org",
         "bbc.com",
         "theguardian.com",
 
-        // Encyclopedias: only curated sources maintained by subject-matter experts through peer review and editorial oversight, not crowd-sourced content like Wikipedia
+        // Encyclopedias: Britannica, Stanford, Scholarpedia, Encyclopedia.com
         "britannica.com",
         "plato.stanford.edu",
         "scholarpedia.org",
         "encyclopedia.com",
 
-        // Fact-checkers: only reputable fact-checking organizations with established processes for verifying claims and maintaining high standards of accuracy and integrity
+        // Fact-checkers: Snopes, FactCheck.org, PolitiFact
         "snopes.com",
         "factcheck.org",
         "politifact.com",
 
-        // Government/Scientific: only official government websites and reputable scientific organizations with established processes for verifying claims and maintaining high standards of accuracy and integrity
+        // Government/Scientific: CDC, NASA, WHO, NIH, Nature, Science, ScienceDirect, JSTOR
         "cdc.gov",
         "nasa.gov",
         "who.int",
@@ -33,6 +32,5 @@ object TrustedSources {
         "sciencemag.org",
         "sciencedirect.com",
         "jstor.org",
-
     )
 }

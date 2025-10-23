@@ -1,4 +1,17 @@
 // /data/api/SonarApiRequest.kt
+
+/**
+ * Data classes for constructing API requests to the Perplexity Sonar API.
+ *
+ * This file contains:
+ * - Request body structure for fact-checking queries
+ * - Nested data classes for complex request objects
+ * - JSON schema for structured responses
+ * - Default parameter values for API requests
+ *
+ * These classes are serialized to JSON using Gson when making API calls.
+ */
+
 package com.example.customapp.data.api
 
 import com.google.gson.annotations.SerializedName

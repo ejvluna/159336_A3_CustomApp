@@ -1,4 +1,13 @@
 // /data/PerplexityRepository.kt
+/**
+ * Central data access layer that coordinates between:
+ * 1. Perplexity Sonar API for fact-checking queries
+ * 2. Local Room database for storing verification history
+ *
+ * Handles data transformation, error handling, and provides a clean API for ViewModels.
+ * This class is stateless - all operations are scoped to the calling coroutine.
+ */
+
 package com.example.customapp.data
 
 // Import required packages to perform API calls and database operations
@@ -15,8 +24,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import retrofit2.HttpException
 
-// Class to handle API calls and database operations: input parameters are SonarApiService and ClaimHistoryDao
-// RESOURCE MANAGEMENT: This repository is stateless and doesn't hold resources that need cleanup
+// Class to encapsulate data operations for Perplexity API and local database
 class PerplexityRepository(
     private val apiService: SonarApiService,
     private val claimHistoryDao: ClaimHistoryDao
@@ -24,16 +32,12 @@ class PerplexityRepository(
     // Create and store an instance of Gson to parse JSON responses
     private val gson = Gson()
 
-    // Function to verify if the provided query is factually correct
+    // Class Function to verify if the provided query is factually correct
     suspend fun verifyQuery(query: String): VerificationResult {
         val tag = "PerplexityRepository"
-
-        // Try to verify the query by making an API call
         return try {
             Log.d(tag, "Verifying query: $query")
-            
-            // Build JSON Schema for structured response per Sonar API requirements
-            // Note: Citations are returned separately in the API response, not in the JSON content
+            // Build JSON Schema for structured response per Sonar API requirements (Citations are returned separately in the API response, not in the JSON content)
             val jsonSchema = mapOf(
                 "type" to "object",
                 "properties" to mapOf(
@@ -47,7 +51,6 @@ class PerplexityRepository(
             val responseFormat = SonarApiRequest.ResponseFormat(
                 jsonSchema = SonarApiRequest.JsonSchema(schema = jsonSchema)
             )
-
             // Build the request to the Sonar API: includes the query, model, temperature, max tokens, search domain filter, response format, and efficiency parameters
             val request = SonarApiRequest(
                 messages = listOf(
@@ -92,13 +95,9 @@ Claim: $query"""
             }
             // Otherwise log the success and parse the API response
             Log.d(tag, "Query verified successfully")
-
             // Store the citations from the API response
             val apiCitations = response.citations ?: emptyList()
             parseApiResponse(query, content, apiCitations)
-
-            // Catch block for handling exceptions gracefully without crashing the app
-
             // Handle HTTP exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
         } catch (e: HttpException) {
             Log.e(tag, "HTTP Error: ${e.code()} - ${e.message()}")
@@ -127,7 +126,7 @@ Claim: $query"""
                 citations = emptyList()
             )
 
-            // Handle connection exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
+            // Handle exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
         } catch (e: java.net.ConnectException) {
             Log.e(tag, "Connection Error: ${e.message}")
             VerificationResult(
@@ -137,8 +136,6 @@ Claim: $query"""
                 explanation = "Failed to connect to the API. Please check your internet connection.",
                 citations = emptyList()
             )
-
-            // Handle JSON syntax exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
         } catch (e: com.google.gson.JsonSyntaxException) {
             Log.e(tag, "Malformed Response: ${e.message}")
             VerificationResult(
@@ -148,8 +145,6 @@ Claim: $query"""
                 explanation = "The API returned an unexpected response format. Please try again.",
                 citations = emptyList()
             )
-
-            // Handle unexpected exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
         } catch (e: Exception) {
             Log.e(tag, "Unexpected Error: ${e::class.simpleName} - ${e.message}", e)
             VerificationResult(
@@ -162,8 +157,9 @@ Claim: $query"""
         }
     }
 
-    // Function to get the history of queries from the database
+    // Class Function to get the history of queries from the database
     fun getHistory(): Flow<List<VerificationResult>> {
+        // R
         return claimHistoryDao.getAllClaims().map { entities ->
             entities.map { entity ->
                 VerificationResult(
@@ -179,7 +175,7 @@ Claim: $query"""
         }
     }
 
-    // Function to save a query to the database
+    // Class Function to save a query to the database
     suspend fun saveQuery(result: VerificationResult) {
         val entity = ClaimHistoryEntity(
             query = result.claim,
@@ -191,21 +187,18 @@ Claim: $query"""
         claimHistoryDao.insertClaim(entity)
     }
 
-    // Function to delete a query from the database
+    // Class Function to delete a query from the database
     suspend fun deleteQuery(id: Int) {
         claimHistoryDao.deleteClaimById(id)
     }
 
-    // Function to parse the API response
+    // Class Function to parse the API response
     private fun parseApiResponse(claim: String, content: String, apiCitations: List<String>): VerificationResult {
         val tag = "PerplexityRepository"
-        
         // Parse JSON response (without citations - those come from API response)
         val jsonObject = gson.fromJson(content, com.google.gson.JsonObject::class.java)
-
         // Store the rating from the API response (default to UNABLE_TO_VERIFY if not found)
         val ratingStr = jsonObject.get("rating")?.asString ?: "UNABLE_TO_VERIFY"
-
         // Set the rating based on the rating string
         val rating = when (ratingStr.uppercase()) {
             "TRUE", "MOSTLY_TRUE" -> VerificationResult.Rating.TRUE
@@ -214,15 +207,12 @@ Claim: $query"""
             "UNABLE_TO_VERIFY" -> VerificationResult.Rating.UNABLE_TO_VERIFY
             else -> VerificationResult.Rating.UNABLE_TO_VERIFY
         }
-
         // Store the summary and explanation from the API response
         val summary = jsonObject.get("summary")?.asString ?: ""
         val explanation = jsonObject.get("explanation")?.asString ?: ""
-
         // Log the parsed response for debugging
         Log.d(tag, "Parsed JSON response: rating=$ratingStr, citations=${apiCitations.size}")
         apiCitations.forEach { Log.d(tag, "  Citation: $it") }
-
         // Return the parsed response
         return VerificationResult(
             claim = claim,
@@ -233,8 +223,9 @@ Claim: $query"""
         )
     }
 
-    // Function to parse the citations from the API response
+    // Class Function to parse the citations from the API response
     private fun parseCitations(citationsJson: String): List<String> {
+        // Call Gson to parse the citations from the API response into a list of strings
         return try {
             gson.fromJson(citationsJson, Array<String>::class.java).toList()
         } catch (e: Exception) {

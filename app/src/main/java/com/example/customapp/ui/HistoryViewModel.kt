@@ -1,4 +1,17 @@
 // ui/HistoryViewModel.kt
+
+/**
+ * ViewModel for managing the history screen's data and business logic.
+ *
+ * This ViewModel handles:
+ * - Loading verification history from the repository
+ * - Managing the list of past verifications
+ * - Processing delete operations
+ * - Maintaining UI state
+ *
+ * The data is exposed as StateFlow to enable reactive UI updates.
+ */
+
 package com.example.customapp.ui
 
 // Import required packages for ViewModel lifecycle management, reactive data streams, and coroutines

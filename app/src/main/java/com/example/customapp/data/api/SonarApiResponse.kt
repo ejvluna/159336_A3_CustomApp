@@ -1,4 +1,17 @@
 // data/api/SonarApiResponse.kt
+
+/**
+ * Data classes for parsing responses from the Perplexity Sonar API.
+ *
+ * This file contains:
+ * - Response structure for fact-checking results
+ * - Nested data classes for complex response objects
+ * - Data classes for citations and usage information
+ * - Null-safety for optional fields
+ *
+ * These classes are deserialized from JSON using Gson when receiving API responses.
+ */
+
 package com.example.customapp.data.api
 
 import com.google.gson.annotations.SerializedName
