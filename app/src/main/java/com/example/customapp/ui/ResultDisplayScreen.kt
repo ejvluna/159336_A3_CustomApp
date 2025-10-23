@@ -1,4 +1,18 @@
 // ui/ResultDisplayScreen.kt
+
+/**
+ * Screen for displaying verification results and source citations.
+ *
+ * This screen shows:
+ * - Verification status (True/False/Misleading/Unable to Verify)
+ * - Summary of findings
+ * - Detailed explanation
+ * - List of source citations with clickable links
+ * - Option to return to the input screen
+ *
+ * The UI updates reactively based on the provided VerificationResult.
+ */
+
 package com.example.customapp.ui
 
 // Import packages required for functionality

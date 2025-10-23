@@ -1,4 +1,11 @@
 // MainActivity.kt
+/**
+ * The main activity of the Verifica app.
+ *
+ * This activity serves as the entry point for the app, managing the app's lifecycle and
+ * displaying the main UI. It coordinates between the CustomApp composable and the
+ * PerplexityRepository for data access.
+ */
 package com.example.customapp
 
 // Android Framework Imports for Activity lifecycle and state management, and asynchronous operations

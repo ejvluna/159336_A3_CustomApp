@@ -1,3 +1,19 @@
+// ui/theme/Color.kt
+
+/**
+ * Color definitions for the Verifica app's theme.
+ *
+ * This file contains all color constants used throughout the app,
+ * following Material Design 3 theming principles.
+ *
+ * Colors are organized by:
+ * - Primary/Secondary/Tertiary colors
+ * - Neutral colors
+ * - Status colors (success, warning, error)
+ *
+ * All colors are defined as Compose Color objects for consistent theming.
+ */
+
 package com.example.customapp.ui.theme
 
 import androidx.compose.ui.graphics.Color
@@ -15,17 +31,9 @@ val Coral40 = Color(0xFFFF6B6B)     // Vibrant coral for light mode (accent)
 val BlueGrey80 = Color(0xFFB0BEC5)
 val BlueGrey40 = Color(0xFF455A64)
 
-// Status Colors (enhanced saturation)a
+// Status Colors
 val StatusTrue = Color(0xFF2E7D32)      // Green
 val StatusFalse = Color(0xFFC62828)     // Red
 val StatusMisleading = Color(0xFFF57C00) // Orange
 val StatusUnverified = Color(0xFF616161) // Grey
 
-/*
-// Status Colors - for verification results (TRUE, FALSE, MISLEADING, UNABLE_TO_VERIFY)
-val StatusTrue = Color(0xFF4CAF50)      // Green
-val StatusFalse = Color(0xFFF44336)     // Red
-val StatusMisleading = Color(0xFFFFA000) // Orange
-val StatusUnverified = Color(0xFF9E9E9E) // Grey
-
- */

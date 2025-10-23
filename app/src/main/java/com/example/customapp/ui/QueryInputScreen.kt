@@ -1,9 +1,22 @@
 // ui/QueryInputScreen.kt
+
+/**
+ * Main screen for submitting and verifying claims.
+ *
+ * This screen allows users to:
+ * - Enter claims (up to 500 characters)
+ * - View real-time character count
+ * - Submit claims for verification
+ * - See input validation feedback
+ * - Navigate to history
+ *
+ * The screen manages its own UI state and coordinates with the ViewModel for verification requests.
+ */
+
 package com.example.customapp.ui
 
 // Import packages required for functionality
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -39,7 +52,7 @@ fun QueryInputScreen(
     ) {
         // Set text for the query input screen
         Text(
-            text = "Verify a Claim",
+            text = "Verifica",
             style = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(bottom = 24.dp)
         )
@@ -56,8 +69,8 @@ fun QueryInputScreen(
                 }
             },
             isError = showEmptyError || showMaxLengthError,
-            label = { Text("Enter a claim to verify") },
-            placeholder = { Text("Type your claim here...") },
+            label = { Text("Enter a claim or question to verify") },
+            placeholder = { Text("Type your claim or question here...") },
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 120.dp),

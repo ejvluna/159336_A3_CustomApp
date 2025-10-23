@@ -1,4 +1,16 @@
 // /data/api/SonarApiService.kt
+
+/**
+ * Retrofit service interface for the Perplexity Sonar API.
+ *
+ * This interface defines:
+ * - API endpoints and their HTTP methods
+ * - Request/response types
+ * - Authentication headers
+ * - Query and path parameters
+ *
+ * The actual HTTP requests are handled by Retrofit.
+ */
 package com.example.customapp.data.api
 
 // Import required packages to perform API calls and handle HTTP requests

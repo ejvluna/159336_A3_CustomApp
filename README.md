@@ -2,12 +2,7 @@
 
 ```markdown name=README.md
 
-**Last Updated**: October 2025  
-**Status**: In Development
-
-# Truthiness - Fact-Checking Android App
-
-An educational Android fact-checking application that validates user queries against pre-defined trusted information sources using Perplexity's Sonar API.
+**Last Updated**: 23 October 2025
 
 ## 📋 Table of Contents
 
@@ -27,14 +22,41 @@ An educational Android fact-checking application that validates user queries aga
 
 ## 🎯 Overview
 
-**Truthiness** is an Android application that helps users verify claims and statements by cross-referencing them against trusted information sources. The app leverages Perplexity's Sonar API to perform fact-checking and provides detailed verification results with citations.
+**<Verifica** is an Android application that helps users verify claims and statements by cross-referencing them against trusted information sources. The app leverages Perplexity's Sonar API to perform fact-checking and provides detailed verification results with citations.
 
-### Key Features
-- **Claim Verification**: Submit claims for fact-checking against trusted sources
-- **Detailed Results**: Receive verification ratings (MOSTLY_TRUE, MIXED, MOSTLY_FALSE) with explanations
-- **Citation Tracking**: View sources used for verification with clickable links
-- **Local History**: Store and manage past verification queries
-- **Material Design 3 UI**: Modern, responsive Jetpack Compose interface
+### ✨ Key Features 
+
+- **Intelligent Claim Verification**: Submit claims up to 500 characters for AI-powered fact-checking via Perplexity's Sonar API. The API searches across trusted sources (Reuters, BBC, Wikipedia, Snopes, FactCheck, CDC, NASA, WHO, and more) to provide evidence-based analysis.
+
+- **Input Validation & Real-Time Feedback**: 
+  - Character counter with 500-character limit enforcement
+  - Empty submission prevention
+  - Real-time error messages for invalid input
+  - Disabled submit button during verification
+
+- **Color-Coded Verification Results**: 
+  - 🟢 **TRUE** (Green): Claim is verified as accurate
+  - 🟡 **MISLEADING** (Yellow): Claim contains partially true information
+  - 🔴 **FALSE** (Red): Claim is inaccurate or false
+  - ⚪ **UNABLE TO VERIFY** (Grey): Insufficient information available
+
+- **Comprehensive Result Display**: Each verification includes:
+  - Verification rating with visual indicator
+  - Brief summary of findings
+  - Detailed explanation with evidence-based analysis
+  - Clickable citations linking to source materials
+
+- **Local History Management**: 
+  - Automatic saving of all verification queries
+  - Browse past queries with timestamps (newest first)
+  - Delete individual history entries
+  - Persistent storage on device
+
+- **Modern UI/UX with Material Design 3**: 
+  - Smooth screen transitions and animations
+  - Loading indicators during verification
+  - Responsive layout for all screen sizes
+  - Intuitive bottom navigation between Query and History screens
 
 ---
 
@@ -42,7 +64,7 @@ An educational Android fact-checking application that validates user queries aga
 
 ### Architecture Pattern: MVVM + Repository Pattern
 
-The app follows a **two-layer architecture** optimized for clarity and maintainability:
+The app is designed for clean functionality and maintainable approach that follows a **two-layer architecture** :
 
 ```
 ┌─────────────────────────────────────────┐
@@ -51,6 +73,7 @@ The app follows a **two-layer architecture** optimized for clarity and maintaina
 │  • MainActivity (Compose UI)            │
 │  • Composable Screens                   │
 │  • QueryViewModel (State Management)    │
+│  • HistoryViewModel (State Management)  │
 └─────────────────────────────────────────┘
               ↕ (Data binding)
 ┌─────────────────────────────────────────┐
@@ -72,39 +95,9 @@ The app follows a **two-layer architecture** optimized for clarity and maintaina
 
 ---
 
-## ✨ Features
-
-### 1. **Claim Verification**
-- Users input claims up to 500 characters
-- Input validation with character counter
-- Real-time UI feedback during verification
-
-### 2. **Fact-Checking Process**
-- Query processed through Perplexity's Sonar API: https://www.perplexity.ai/hub/blog/introducing-the-sonar-pro-api
-- Searches across pre-configured trusted domains
-- Returns AI-generated analysis with sources
-
-### 3. **Results Display**
-- **Verification Rating**: Color-coded credibility indicator
-  - 🟢 Green: TRUE
-  - 🟡 Yellow: MISLEADING
-  - 🔴 Red: FALSE
-  - Grey: UNABLE TO VERIFY
-- **Summary**: Brief overview of findings
-- **Detailed Explanation**: In-depth analysis
-- **Citations**: Clickable source links for verification
-
-### 4. **History Management**
-- Automatic saving of verification results
-- Browse past queries with timestamps
-- Delete individual history entries
-- Sorted by most recent first
-
----
-
 ## 🔧 System Components
 
-### Core Components (6 Classes)
+### Core Components (7 Classes)
 
 #### **1. MainActivity**
 - Entry point for the Android application
@@ -113,13 +106,20 @@ The app follows a **two-layer architecture** optimized for clarity and maintaina
 - Applies Material Design 3 theme
 
 #### **2. QueryViewModel**
-- Manages UI state using `StateFlow<UiState>`
+- Manages query input screen state using `StateFlow<UiState>`
 - States: `Idle`, `Loading`, `Success`, `Error`
 - Coordinates verification requests with repository
 - Survives configuration changes via ViewModel scope
 - Transforms API responses to UI models
 
-#### **3. PerplexityRepository**
+#### **3. HistoryViewModel**
+- Manages history screen state and data
+- Exposes `historyFlow: StateFlow<List<VerificationResult>>`
+- Handles delete operations for history entries
+- Provides reactive updates when database changes
+- Survives configuration changes via ViewModel scope
+
+#### **4. PerplexityRepository**
 - Single source of truth for all data operations
 - Methods:
   - `suspend fun verifyQuery(query: String): VerificationResult`
@@ -129,19 +129,19 @@ The app follows a **two-layer architecture** optimized for clarity and maintaina
 - Error handling and data transformation
 - Bridges API service and database layers
 
-#### **4. SonarApiService**
+#### **5. SonarApiService**
 - Retrofit interface for API communication
 - POST endpoint: `/chat/completions`
 - Handles Bearer token authentication
 - Manages HTTP headers and request configuration
 
-#### **5. ClaimHistoryDao**
+#### **6. ClaimHistoryDao**
 - Room database access object (DAO)
 - CRUD operations for verification history
 - Returns `Flow<List<ClaimHistoryEntity>>` for reactive updates
 - Queries ordered by timestamp (newest first)
 
-#### **6. AppDatabase**
+#### **7. AppDatabase**
 - Room database singleton instance
 - Provides DAO access
 - Thread-safe initialization with double-checked locking
@@ -165,7 +165,7 @@ The app follows a **two-layer architecture** optimized for clarity and maintaina
 - `EmptyHistoryState()`: Empty state UI
 
 **Configuration Classes:**
-- `TrustedSources`: Pre-configured domain filter list
+- `TrustedSources.kt`: Pre-configured domain filter list for API search constraints.
 - Theme files: Material Design 3 styling
 
 ---
@@ -193,11 +193,11 @@ Perplexity Sonar API (Network Request)
 ```
 API Request with Domain Filters
     ↓
-Perplexity Searches Trusted Sources:
-├─ News: Reuters, AP News, BBC, NPR
-├─ Encyclopedias: Britannica, Wikipedia
-├─ Fact-Checkers: Snopes, FactCheck, PolitiFact
-└─ Government/Scientific: CDC, NASA, WHO
+Perplexity Searches Trusted Sources (18 domains):
+├─ News: Reuters, AP News, NPR, BBC, The Guardian
+├─ Encyclopedias: Britannica, Stanford, Scholarpedia, Encyclopedia.com
+├─ Fact-Checkers: Snopes, FactCheck.org, PolitiFact
+└─ Government/Scientific: CDC, NASA, WHO, NIH, Nature, Science, ScienceDirect, JSTOR
     ↓
 API Returns JSON Response
 ├─ Claim verification status
@@ -218,7 +218,7 @@ QueryViewModel Updates → StateFlow<UiState>
     ↓
 ResultDisplayScreen Observes & Renders UI
     ↓
-Auto-save to HistoryScreen
+Database Change Triggers HistoryViewModel Update
 ```
 
 ### History Retrieval Flow
@@ -230,7 +230,7 @@ Repository.getHistory() → ClaimHistoryDao
     ↓
 Room Query Results → Flow<List<ClaimHistoryEntity>>
     ↓
-HistoryViewModel Transforms → Flow<List<VerificationResult>>
+Repository Maps → Flow<List<VerificationResult>>
     ↓
 HistoryScreenFull Observes & Renders List
 ```
@@ -240,8 +240,8 @@ HistoryScreenFull Observes & Renders List
 ## 🛠️ Technology Stack
 
 ### Core Android
-- **Language**: Kotlin 1.9+
-- **SDK**: Target SDK 34, Minimum SDK 24
+- **Language**: Kotlin 2.0.0
+- **SDK**: Target SDK 34, Minimum SDK 26
 - **UI Framework**: Jetpack Compose
 
 ### Architecture Components
@@ -250,9 +250,9 @@ HistoryScreenFull Observes & Renders List
 - **Room Database**: Local persistence
 
 ### Networking
-- **Retrofit 2**: Type-safe HTTP client
-- **OkHttp 3**: HTTP interceptor and configuration
-- **Gson**: JSON serialization/deserialization
+- **Retrofit 2** (2.11.0): Type-safe HTTP client
+- **OkHttp 3** (4.12.0): HTTP interceptor and configuration
+- **Gson** (2.10.1): JSON serialization/deserialization
 
 ### Asynchronous Programming
 - **Kotlin Coroutines**: Non-blocking operations
@@ -274,7 +274,7 @@ The `PerplexityRepository` class acts as a single source of truth for data opera
 The app follows the Model-View-ViewModel (MVVM) pattern with clear separation of concerns:
 - **Model**: Data classes (`VerificationResult`, `ClaimHistoryEntity`) and database entities
 - **View**: Jetpack Compose UI components
-- **ViewModel**: `PerplexityViewModel` manages UI state and business logic, exposed via `StateFlow` for reactive updates
+- **ViewModel**: `QueryViewModel` and `HistoryViewModel` manage UI state and business logic, exposed via `StateFlow` for reactive updates
 
 #### Reactive Data Streams
 Using `Flow` and `StateFlow` enables reactive, non-blocking data updates. The database queries return `Flow<List<>>` allowing the UI to automatically update whenever data changes, without manual polling or callbacks.
@@ -294,9 +294,9 @@ The app implements MVP-level resource management to prevent memory leaks and opt
 ## 🚀 Setup Instructions
 
 ### Prerequisites
-- Android Studio (2023.1 or later)
-- Android SDK (API 24+)
-- Kotlin 1.9+
+- Android Studio (2024.1 or later)
+- Android SDK (API 26+)
+- Kotlin 2.0.0
 - Perplexity API Key
 
 ### Step 1: Clone the Repository
@@ -312,12 +312,12 @@ cd 159336_A3_CustomApp
 4. Store the key securely
 
 ### Step 3: Configure API Key
-Create a `local.properties` file in the project root:
+Create a `secrets.properties` file in the project root:
 ```properties
 PERPLEXITY_API_KEY=your_api_key_here
 ```
 
-**Important**: Never commit API keys to version control. Add `local.properties` to `.gitignore`.
+**Important**: Never commit API keys to version control. Add `secrets.properties` to `.gitignore`. The app uses the Secrets Gradle Plugin to securely manage API keys.
 
 ### Step 4: Build the Project
 ```bash
@@ -354,8 +354,7 @@ app/
 │   │   │   │   ├── ClaimHistoryDao.kt   # DAO for CRUD operations on history
 │   │   │   │   └── ClaimHistoryEntity.kt# Database entity for claim history
 │   │   │   └── model/
-│   │   │       ├── VerificationResult.kt# UI model for verification results
-│   │   │       └── Rating.kt            # Enum for claim ratings
+│   │   │       └── VerificationResult.kt# UI model with nested Rating enum
 │   │   ├── ui/
 │   │   │   ├── QueryInputScreen.kt      # Query input composable with validation
 │   │   │   ├── ResultDisplayScreen.kt   # Results display composable with citations
@@ -390,30 +389,59 @@ app/
   "model": "sonar",
   "messages": [
     {
-      "role": "system",
-      "content": "You are a fact-checker. Verify claims and provide evidence-based analysis."
-    },
-    {
       "role": "user",
-      "content": "[User's claim]"
+      "content": "Fact-check the following claim and provide a rating with these definitions:\n- TRUE: The claim is fully supported by credible evidence\n- FALSE: The claim is contradicted by credible evidence\n- MISLEADING: The claim contains some truth but is presented deceptively or lacks important context\n- UNABLE_TO_VERIFY: There is insufficient evidence to verify the claim\n\nProvide a concise summary and detailed explanation with citations from trusted sources.\n\nClaim: [User's claim]"
     }
   ],
   "search_domain_filter": [
-    "britannica.com",
-    "wikipedia.org",
     "reuters.com",
     "apnews.com",
+    "npr.org",
     "bbc.com",
+    "theguardian.com",
+    "britannica.com",
+    "plato.stanford.edu",
+    "scholarpedia.org",
+    "encyclopedia.com",
     "snopes.com",
     "factcheck.org",
     "politifact.com",
     "cdc.gov",
     "nasa.gov",
-    "who.int"
+    "who.int",
+    "nih.gov",
+    "nature.com",
+    "sciencemag.org",
+    "sciencedirect.com",
+    "jstor.org"
   ],
-  "return_citations": true,
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "FactCheckResult",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "rating": {
+            "type": "string",
+            "enum": ["TRUE", "FALSE", "MISLEADING", "UNABLE_TO_VERIFY"]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "explanation": {
+            "type": "string"
+          }
+        },
+        "required": ["rating", "summary", "explanation"]
+      }
+    }
+  },
   "temperature": 0.2,
-  "max_tokens": 1000
+  "max_tokens": 1000,
+  "max_tokens_per_page": 512,
+  "max_results": 5,
+  "num_sources": 3
 }
 ```
 
@@ -438,30 +466,6 @@ app/
 }
 ```
 
-### Trusted Sources Configuration
-
-Pre-defined domain filters in `TrustedSources.kt`:
-
-**News Organizations**:
-- reuters.com
-- apnews.com
-- npr.org
-- bbc.com
-- theguardian.com
-
-**Encyclopedias**:
-- britannica.com
-- wikipedia.org
-
-**Fact-Checkers**:
-- snopes.com
-- factcheck.org
-- politifact.com
-
-**Government/Scientific**:
-- cdc.gov
-- nasa.gov
-- who.int
 
 ---
 
@@ -475,7 +479,7 @@ data class ClaimHistoryEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val query: String,              // User's original claim
     val result: String,             // Verification result
-    val status: String,             // MOSTLY_TRUE, MIXED, MOSTLY_FALSE
+    val status: String,             // TRUE, FALSE, MISLEADING, UNABLE_TO_VERIFY
     val citations: String,          // JSON array of source URLs
     val timestamp: Long,            // Query timestamp in milliseconds
     val summary: String,            // Brief summary
@@ -509,7 +513,7 @@ data class ClaimHistoryEntity(
 ### Run on Android Emulator
 1. Open Android Studio
 2. Click "Run" or press `Shift + F10`
-3. Select target emulator (API 24+)
+3. Select target emulator (API 26+)
 
 ### Run on Physical Device
 1. Enable Developer Mode on device
@@ -522,15 +526,21 @@ data class ClaimHistoryEntity(
 
 | Library | Purpose | Version |
 |---------|---------|---------|
-| Retrofit 2 | Type-safe HTTP client | 2.9+ |
-| OkHttp 3 | HTTP client and interceptor | 4.9+ |
-| Gson | JSON serialization | 2.8+ |
-| Room | Local database | 2.5+ |
-| Jetpack Compose | UI framework | Latest |
-| Material 3 | Design system | 1.0+ |
-| Coroutines | Async programming | 1.6+ |
-| ViewModel | State management | 2.6+ |
-| LiveData/StateFlow | Reactive data | Latest |
+| Kotlin | Programming language | 2.0.0 |
+| Retrofit 2 | Type-safe HTTP client | 2.11.0 |
+| OkHttp 3 | HTTP client and interceptor | 4.12.0 |
+| Gson | JSON serialization | 2.10.1 |
+| Room | Local database | 2.6.1 |
+| Jetpack Compose | UI framework | 2024.06.00 |
+| Material 3 | Design system | Latest (from BOM) |
+| Kotlin Coroutines | Async programming | 1.8.0 |
+| ViewModel | State management | 2.8.4 |
+| StateFlow | Reactive data | Latest (from BOM) |
+| KSP | Kotlin Symbol Processing | 2.0.0-1.0.22 |
+| Secrets Gradle Plugin | API key management | Latest |
+| JUnit | Unit testing | 4.13.2 |
+| Mockito | Mocking framework | 5.7.0 |
+| Espresso | UI testing | 3.5.1 |
 
 ---
 
@@ -539,6 +549,9 @@ data class ClaimHistoryEntity(
 ### API Configuration
 - **Temperature**: 0.2 (lower = more factual, deterministic)
 - **Max Tokens**: 1000 (concise responses)
+- **Max Tokens Per Page**: 512 (content extraction limit per webpage)
+- **Max Results**: 5 (maximum search results to process)
+- **Num Sources**: 3 (maximum citations to return)
 - **Model**: "sonar" (standard) or "sonar-pro" (better factuality)
 - **Return Citations**: true (always enabled)
 
@@ -546,7 +559,7 @@ data class ClaimHistoryEntity(
 - **Connection Timeout**: 30 seconds
 - **Read Timeout**: 30 seconds
 - **Write Timeout**: 30 seconds
-- **Retry Policy**: Enabled with exponential backoff
+- **Retry Policy**: Enabled for connection failures
 
 ### Database Configuration
 - **Type**: Room SQLite
@@ -557,14 +570,16 @@ data class ClaimHistoryEntity(
 
 ## 🐛 Error Handling
 
-The app implements comprehensive error handling:
+The app implements comprehensive error handling with specific messages for each error type:
 
-- **Network Errors**: "Unable to connect. Check your internet connection."
-- **API Errors**: "API error. Please try again later."
+- **Connection Error**: "Failed to connect to the API. Please check your internet connection."
+- **Network Timeout**: "The request took too long. Please check your internet connection and try again."
+- **Authentication (401)**: "Invalid API Key: Authentication failed. Please check your API key configuration."
+- **Rate Limiting (429)**: "Rate Limited: Too many requests. Please wait a moment and try again."
+- **Server Error (500, 502, 503)**: "Server Error: The API service is temporarily unavailable. Please try again later."
+- **Invalid Response Format**: "The API returned an unexpected response format. Please try again."
 - **Invalid Input**: "Please enter a valid claim (1-500 characters)."
-- **Rate Limiting (429)**: "Too many requests. Please wait before trying again."
-- **Authentication (401)**: "API key is invalid. Please check configuration."
-- **Database Errors**: "Error saving to history. Please try again."
+- **Unexpected Errors**: "An unexpected error occurred: [error details]"
 
 ---
 

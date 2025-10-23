@@ -1,5 +1,20 @@
+// ui/theme/Theme.kt
+
+/**
+ * Theme configuration for the Verifica app using Material Design 3.
+ *
+ * This file defines:
+ * - Light and dark color schemes
+ * - Custom theme composables
+ * - Typography settings
+ * - Shape configurations
+ *
+ * The theme supports dynamic color theming on Android 12+ devices while maintaining consistent branding across all API levels.
+ */
+
 package com.example.customapp.ui.theme
 
+// Import packages for Android framework, Compose, and Material Design 3
 import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -16,17 +31,20 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.compose.ui.graphics.Color
 
+// Defines the color scheme for dark mode
 private val DarkColorScheme = darkColorScheme(
     primary = Teal80,
     secondary = Coral80,
     tertiary = BlueGrey80
 )
-
+// Defines the color scheme for light mode
 private val LightColorScheme = lightColorScheme(
     primary = Teal40,
     secondary = Coral40,
     tertiary = BlueGrey40
 )
+
+// Composable to apply the theme to the app
 
 @Composable
 fun CustomAppTheme(

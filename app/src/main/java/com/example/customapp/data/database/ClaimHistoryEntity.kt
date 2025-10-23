@@ -1,4 +1,17 @@
 // data/database/ClaimHistoryEntity.kt
+
+/**
+ * Data class representing a verification record in the local database.
+ *
+ * This entity maps to the 'claim_history' table and stores:
+ * - User-submitted claims
+ * - Verification results and status
+ * - Source citations
+ * - Timestamps for sorting
+ *
+ * The table is automatically managed by Room with an auto-incrementing primary key.
+ */
+
 package com.example.customapp.data.database
 
 // Import packages required for functionality

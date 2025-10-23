@@ -1,4 +1,12 @@
 // ui/HistoryScreen.kt
+/**
+ * History Screen - Displays a scrollable list of past verification results.
+ *
+ * This screen shows all previously verified claims with their status, summary, and timestamps.
+ * The list is automatically sorted by most recent and updates reactively when data changes.
+ *
+ * */
+
 package com.example.customapp.ui
 
 // Import packages for Jetpack Compose UI components, layout, lazy lists, icons, state management, and data models
