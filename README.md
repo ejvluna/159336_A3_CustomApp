@@ -6,7 +6,7 @@
 
 ### ✨ Key Features 
 
-- **Intelligent Claim Verification**: Submit claims up to 500 characters for AI-powered fact-checking via Perplexity's Sonar API. The API searches across trusted sources (Reuters, BBC, Wikipedia, Snopes, FactCheck, CDC, NASA, WHO, and more) to provide evidence-based analysis.
+- **Intelligent Claim Verification**: Submit claims up to 500 characters for AI-powered fact-checking via Perplexity's Sonar API. The API searches across trusted sources to provide evidence-based analysis.
 
 - **Input Validation & Real-Time Feedback**: 
   - Character counter with 500-character limit enforcement
