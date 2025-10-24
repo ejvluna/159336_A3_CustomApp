@@ -34,6 +34,7 @@ class PerplexityRepository(
     // Class Function to verify if the provided query is factually correct
     suspend fun verifyQuery(query: String): VerificationResult {
         val tag = "PerplexityRepository"
+        val verificationTimestamp = System.currentTimeMillis()
         return try {
             Log.d(tag, "Verifying query: $query")
             // Build JSON Schema for structured response per Sonar API requirements (Citations are returned separately in the API response, not in the JSON content)
@@ -70,7 +71,8 @@ RESPONSE REQUIREMENTS:
 Claim: $query"""
                     )
                 ),
-                model = ApiConfig.MODEL_SONAR,
+                //model = ApiConfig.MODEL_SONAR_PRO, // Uncomment to use Sonar-Pro model (more advanced, higher cost)
+                model = ApiConfig.MODEL_SONAR, // Uncomment to use Sonar model (standard, lower cost)
                 temperature = ApiConfig.DEFAULT_TEMPERATURE,
                 maxTokens = ApiConfig.DEFAULT_MAX_TOKENS,
                 searchDomainFilter = ApiConfig.DEFAULT_SEARCH_DOMAIN_FILTER,
@@ -93,7 +95,8 @@ Claim: $query"""
                     rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
                     summary = "No response from API",
                     explanation = "The API returned an empty response. Please try again.",
-                    citations = emptyList()
+                    citations = emptyList(),
+                    timestamp = verificationTimestamp
                 )
             }
             // Otherwise log the success and parse the API response
@@ -107,7 +110,7 @@ Claim: $query"""
             val apiCitations = response.searchResults?.map { 
                 VerificationResult.Citation(title = it.title, url = it.url, date = it.date)
             } ?: emptyList()
-            parseApiResponse(query, content, apiCitations)
+            parseApiResponse(query, content, apiCitations, verificationTimestamp)
             // Handle HTTP exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
         } catch (e: HttpException) {
             Log.e(tag, "HTTP Error: ${e.code()} - ${e.message()}")
@@ -122,7 +125,8 @@ Claim: $query"""
                 rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
                 summary = "API Error",
                 explanation = errorMessage,
-                citations = emptyList()
+                citations = emptyList(),
+                timestamp = verificationTimestamp
             )
 
             // Handle socket timeout exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
@@ -133,7 +137,8 @@ Claim: $query"""
                 rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
                 summary = "Network Timeout",
                 explanation = "The request took too long. Please check your internet connection and try again.",
-                citations = emptyList()
+                citations = emptyList(),
+                timestamp = verificationTimestamp
             )
 
             // Handle exceptions by logging the error and returning an error and appropriate message, and set the result to UNABLE_TO_VERIFY
@@ -144,7 +149,8 @@ Claim: $query"""
                 rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
                 summary = "Connection Error",
                 explanation = "Failed to connect to the API. Please check your internet connection.",
-                citations = emptyList()
+                citations = emptyList(),
+                timestamp = verificationTimestamp
             )
         } catch (e: com.google.gson.JsonSyntaxException) {
             Log.e(tag, "Malformed Response: ${e.message}")
@@ -153,7 +159,8 @@ Claim: $query"""
                 rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
                 summary = "Invalid Response Format",
                 explanation = "The API returned an unexpected response format. Please try again.",
-                citations = emptyList()
+                citations = emptyList(),
+                timestamp = verificationTimestamp
             )
         } catch (e: Exception) {
             Log.e(tag, "Unexpected Error: ${e::class.simpleName} - ${e.message}", e)
@@ -162,7 +169,8 @@ Claim: $query"""
                 rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
                 summary = "Verification Failed",
                 explanation = "An unexpected error occurred: ${e.message ?: "Unknown error"}",
-                citations = emptyList()
+                citations = emptyList(),
+                timestamp = verificationTimestamp
             )
         }
     }
@@ -193,7 +201,7 @@ Claim: $query"""
             summary = result.summary,
             explanation = result.explanation,
             citations = gson.toJson(result.citations),
-            timestamp = System.currentTimeMillis()
+            timestamp = result.timestamp
         )
         claimHistoryDao.insertClaim(entity)
     }
@@ -204,7 +212,7 @@ Claim: $query"""
     }
 
     // Class Function to parse the API response and extract rating, summary, and explanation
-    private fun parseApiResponse(claim: String, content: String, apiCitations: List<VerificationResult.Citation>): VerificationResult {
+    private fun parseApiResponse(claim: String, content: String, apiCitations: List<VerificationResult.Citation>, timestamp: Long): VerificationResult {
         val tag = "PerplexityRepository"
         // Parse JSON response (without citations - those come from API response)
         val jsonObject = gson.fromJson(content, com.google.gson.JsonObject::class.java)
@@ -230,28 +238,32 @@ Claim: $query"""
             rating = rating,
             summary = summary,
             explanation = explanation,
-            citations = apiCitations
+            citations = apiCitations,
+            timestamp = timestamp
         )
     }
 
     // Class Function to parse the citations from the database and convert them to Citation objects
-    // Handles both old format (List<String>) and new format (List<Citation>) for backward compatibility
     private fun parseCitations(citationsJson: String): List<VerificationResult.Citation> {
         return try {
-            // Try to parse as Citation objects first (new format)
+            // Parse as Citation objects (new format)
             val citationArray = gson.fromJson(citationsJson, Array<VerificationResult.Citation>::class.java)
             citationArray.toList()
         } catch (e: Exception) {
-            // Fallback: try to parse as strings (old format) and convert to Citation objects
-            try {
-                val urlArray = gson.fromJson(citationsJson, Array<String>::class.java)
-                urlArray.map { url ->
-                    VerificationResult.Citation(title = url, url = url, date = null)
-                }
-            } catch (e2: Exception) {
-                emptyList()
-            }
+            // Log the error and return empty list
+            Log.e("PerplexityRepository", "Failed to parse citations: ${e.message}")
+            emptyList()
         }
+        
+        // Commented out fallback for old format (List<String>) - can be re-enabled if needed for legacy data
+        // try {
+        //     val urlArray = gson.fromJson(citationsJson, Array<String>::class.java)
+        //     urlArray.map { url ->
+        //         VerificationResult.Citation(title = url, url = url, date = null)
+        //     }
+        // } catch (e2: Exception) {
+        //     emptyList()
+        // }
     }
 
 }

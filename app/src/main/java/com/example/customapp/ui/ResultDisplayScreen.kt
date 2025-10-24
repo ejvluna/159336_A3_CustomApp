@@ -8,9 +8,9 @@
  * - Summary of findings
  * - Detailed explanation
  * - List of source citations with clickable links
- * - Option to return to the input screen
+ * - Provides navigation back to query screen
  *
- * The UI updates reactively based on the provided VerificationResult.
+ * Uses QueryViewModel for state management and handles one-time events like navigation and URL opening.
  */
 
 package com.example.customapp.ui
@@ -35,8 +35,6 @@ import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.ui.Alignment
 import com.example.customapp.data.model.VerificationResult
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.customapp.ui.theme.CustomAppTheme
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.ui.text.style.TextAlign
@@ -52,6 +50,8 @@ fun ResultDisplayScreen(
     result: VerificationResult,
     onNewQuery: () -> Unit
 ) {
+    // Use the provided callbacks for navigation; no ViewModel needed here
+
     // Get and store the current uri handler and scroll state for smooth scrolling
     val uriHandler = LocalUriHandler.current
     val scrollState = rememberScrollState()
@@ -264,136 +264,3 @@ fun StatusIndicator(rating: VerificationResult.Rating) {
     }
 }
 
-// Helper function to create preview data with Citation objects
-private fun createPreviewResult(
-    claim: String,
-    rating: VerificationResult.Rating,
-    summary: String,
-    explanation: String,
-    citations: List<VerificationResult.Citation>
-) = VerificationResult(
-    id = 0,
-    claim = claim,
-    rating = rating,
-    summary = summary,
-    explanation = explanation,
-    citations = citations,
-    timestamp = System.currentTimeMillis()
-)
-
-
-// -------------------------------------------------------------------------------------------------
-// Previews
-// -------------------------------------------------------------------------------------------------
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun ResultDisplayScreenPreviewTrue() {
-    CustomAppTheme {
-        ResultDisplayScreen(
-            result = createPreviewResult(
-                claim = "The Earth is round",
-                rating = VerificationResult.Rating.TRUE,
-                summary = "This claim is supported by scientific evidence and observations.",
-                explanation = "The spherical shape of the Earth has been confirmed through multiple methods including satellite imagery, physics, and direct observation. This is one of the most well-established facts in science.",
-                citations = listOf(
-                    VerificationResult.Citation(
-                        title = "NASA - Earth",
-                        url = "https://www.nasa.gov/earth",
-                        date = "2024-01-15"
-                    ),
-                    VerificationResult.Citation(
-                        title = "Britannica - Earth",
-                        url = "https://www.britannica.com/science/Earth",
-                        date = "2023-12-20"
-                    )
-                )
-            ),
-            onNewQuery = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun ResultDisplayScreenPreviewFalse() {
-    CustomAppTheme {
-        ResultDisplayScreen(
-            result = createPreviewResult(
-                claim = "Vaccines cause autism",
-                rating = VerificationResult.Rating.FALSE,
-                summary = "This claim is false. Multiple large-scale studies have found no link between vaccines and autism.",
-                explanation = "The original study claiming a vaccine-autism link has been thoroughly discredited and retracted. Numerous subsequent studies involving millions of children have found no connection between vaccines and autism. The scientific consensus is clear that vaccines do not cause autism.",
-                citations = listOf(
-                    VerificationResult.Citation(
-                        title = "CDC - Vaccine Safety",
-                        url = "https://www.cdc.gov/vaccinesafety/concerns/autism.html",
-                        date = "2024-02-10"
-                    ),
-                    VerificationResult.Citation(
-                        title = "WHO - Immunization",
-                        url = "https://www.who.int/news-room/fact-sheets/detail/immunization-vaccines-and-biologicals",
-                        date = "2024-01-05"
-                    )
-                )
-            ),
-            onNewQuery = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun ResultDisplayScreenPreviewMisleading() {
-    CustomAppTheme {
-        ResultDisplayScreen(
-            result = createPreviewResult(
-                claim = "Coffee is bad for your health",
-                rating = VerificationResult.Rating.MISLEADING,
-                summary = "This claim is misleading. While excessive coffee consumption can have negative effects, moderate consumption has been shown to have health benefits.",
-                explanation = "Research shows that moderate coffee consumption (3-5 cups per day) is associated with various health benefits, including reduced risk of certain diseases. However, excessive consumption can lead to anxiety, sleep issues, and other problems. The health effects depend on individual factors and consumption amount.",
-                citations = listOf(
-                    VerificationResult.Citation(
-                        title = "Healthline - Coffee Health Benefits",
-                        url = "https://www.healthline.com/nutrition/coffee-health-benefits",
-                        date = "2024-03-01"
-                    ),
-                    VerificationResult.Citation(
-                        title = "Mayo Clinic - Caffeine",
-                        url = "https://www.mayoclinic.org/healthy-lifestyle/nutrition-and-healthy-eating/in-depth/caffeine/art-20045431",
-                        date = "2024-02-15"
-                    )
-                )
-            ),
-            onNewQuery = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun ResultDisplayScreenPreviewUnableToVerify() {
-    CustomAppTheme {
-        ResultDisplayScreen(
-            result = createPreviewResult(
-                claim = "Ancient aliens built the pyramids",
-                rating = VerificationResult.Rating.UNABLE_TO_VERIFY,
-                summary = "This claim cannot be verified with current evidence.",
-                explanation = "There is no credible evidence to support the claim that ancient aliens built the pyramids. However, it's difficult to definitively prove a negative. The mainstream archaeological consensus is that the pyramids were built by ancient Egyptians using sophisticated engineering techniques for their time.",
-                citations = listOf(
-                    VerificationResult.Citation(
-                        title = "National Geographic - Giza Pyramids",
-                        url = "https://www.nationalgeographic.com/history/archaeology/giza-pyramids/",
-                        date = "2024-01-20"
-                    ),
-                    VerificationResult.Citation(
-                        title = "Smithsonian - Ancient Egypt",
-                        url = "https://www.smithsonianmag.com/history/ancient-egypt-shipping-mining-farming-economy-pyramids-180956619/",
-                        date = "2023-11-10"
-                    )
-                )
-            ),
-            onNewQuery = {}
-        )
-    }
-}

@@ -13,12 +13,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.cancelChildren
 // Jetpack Compose Imports for building UI structures, smooth transitions, and layout management
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 // Material Design 3 components & icons for consistent, modern UI
@@ -51,11 +49,9 @@ class MainActivity : ComponentActivity() {
 // Root composable that manages application state and screen navigation
 @Composable
 fun CustomApp() {
-// STATE MANAGEMENT: Mutable state variables (current screen, result, loading, error) that trigger UI recomposition when their values change
+// STATE MANAGEMENT: Mutable state variables (current screen, result) that trigger UI recomposition when their values change
     var selectedScreen by remember { mutableStateOf(Screen.QUERY) }
     var currentResult by remember { mutableStateOf<VerificationResult?>(null) }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
 // DATA LAYER: Persistent repository with API service and database DAO, using context and coroutine scope for background operations
     val context = LocalContext.current
@@ -67,45 +63,16 @@ fun CustomApp() {
         PerplexityRepository(apiService, dao)
     }
 
-// REACTIVE DATA: Convert database Flow<List> to Compose State for automatic UI updates
-    val historyList by repository.getHistory().collectAsState(emptyList())
-
 // RESOURCE MANAGEMENT: Cleanup in-flight operations when composable leaves composition (e.g., activity destroyed or user navigates away)
     // Definition for the compose library function DisposableEffect to manage resources
     DisposableEffect(Unit) {
         // When the app closes, onDispose runs and cancels all pending coroutines (API calls, database operations, etc.)
         onDispose {
-            scope.coroutineContext.cancelChildren()        }
+            scope.coroutineContext.cancelChildren()
+        }
     }
 
 // HELPER FUNCTIONS: Functions that perform specific tasks to manage app state and perform actions
-    // Helper Function that handles the submission of a query to the API
-    fun onQuerySubmit(query: String) {
-        // Update state variables to show loading and clear any previous error messages
-        isLoading = true
-        errorMessage = null
-        // Launch a coroutine to perform the API call to not block the UI thread
-        scope.launch {
-            // Use a try-catch block to ensure the app doesn't crash on unexpected errors
-            try {
-                // 1. Verify the query and store it in a local variable to ensure
-                val result = repository.verifyQuery(query)
-                // 2. Save the successful result to the database using your existing function
-                repository.saveQuery(result)
-                // 3. Update the state to show the result on the screen
-                currentResult = result
-                selectedScreen = Screen.RESULT
-            } catch (e: Exception) {
-                // Catch any errors and display a message to alert the user
-                errorMessage = e.message ?: "An error occurred"
-            } finally {
-                // Set the loading state to false after the API call is complete
-                isLoading = false
-            }
-        }
-    }
-    // Helper Function that deletes a query from the database (launches async coroutine to avoid blocking UI)
-    fun onDeleteItem(id: Int) = scope.launch { repository.deleteQuery(id) }
     // Helper Function that handles the selection of a query from the history list
     fun onHistoryItemClick(item: VerificationResult) {
         // Store the selected item
@@ -118,7 +85,7 @@ fun CustomApp() {
         selectedScreen = Screen.QUERY
     }
 
-// UI COMPOSITION: Apply theme and build the main app layout with navigation using helper composables and functions
+// UI COMPOSITION: Apply theme and build the main app layout with navigation using helper composable and functions
     CustomAppTheme {
         // Set modifiers to fill the max size of the screen and set the background color
         Surface(
@@ -133,14 +100,15 @@ fun CustomApp() {
                 Box(Modifier.padding(padding)) {
                     when (selectedScreen) {
                         Screen.QUERY -> QueryScreenContainer(
-                            onSubmit = ::onQuerySubmit,
-                            isLoading = isLoading,
-                            errorMessage = errorMessage
+                            repository = repository,
+                            onNavigateToResult = { result ->
+                                currentResult = result
+                                selectedScreen = Screen.RESULT
+                            }
                         )
                         Screen.HISTORY -> HistoryScreenContainer(
-                            historyList = historyList,
-                            onItemClick = ::onHistoryItemClick,
-                            onDeleteQuery = ::onDeleteItem
+                            repository = repository,
+                            onItemClick = ::onHistoryItemClick
                         )
                         Screen.RESULT -> {
                             // Create a local, immutable copy of the state variable.
@@ -193,17 +161,15 @@ private fun BottomNavigationBar(
 // Composable container to display the Query screen with fade transition animation
 @Composable
 private fun QueryScreenContainer(
-    onSubmit: (String) -> Unit,
-    isLoading: Boolean,
-    errorMessage: String?
+    repository: PerplexityRepository,
+    onNavigateToResult: (VerificationResult) -> Unit
 ) {
     // Call ScreenTransition composable to wrap screen with fade transition animation
     ScreenTransition {
-        // Call QueryInputScreen composable to render the QueryInputScreen UI component with callbacks
+        // Call QueryInputScreen composable to render the QueryInputScreen UI component with ViewModel
         QueryInputScreen(
-            onSubmit = onSubmit,
-            isLoading = isLoading,
-            errorMessage = errorMessage
+            onNavigateToResult = onNavigateToResult,
+            repository = repository
         )
     }
 }
@@ -216,7 +182,7 @@ private fun ResultScreenContainer(
 ) {
     // Call ScreenTransition composable to wrap screen with fade transition animation
     ScreenTransition {
-        // Call ResultDisplayScreen composable to render the ResultsDisplayScreen UI component with callbacks
+        // Call ResultDisplayScreen composable to render the ResultsDisplayScreen UI component
         ResultDisplayScreen(
             result = currentResult,
             onNewQuery = onNewQuery
@@ -227,17 +193,15 @@ private fun ResultScreenContainer(
 // Composable container to display the History screen with fade transition animation
 @Composable
 private fun HistoryScreenContainer(
-    historyList: List<VerificationResult>,
-    onItemClick: (VerificationResult) -> Unit,
-    onDeleteQuery: (Int) -> Unit,
+    repository: PerplexityRepository,
+    onItemClick: (VerificationResult) -> Unit
 ) {
     // Call ScreenTransition composable to wrap screen with fade transition animation
     ScreenTransition {
-        // Call HistoryScreen composable to render the HistoryScreen UI component with callbacks
+        // Call HistoryScreen composable to render the HistoryScreen UI component with ViewModel
         HistoryScreen(
-            historyList = historyList,
-            onItemClick = onItemClick,
-            onDelete = onDeleteQuery,
+            repository = repository,
+            onItemClick = onItemClick
         )
     }
 }

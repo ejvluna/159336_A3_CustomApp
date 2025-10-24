@@ -32,10 +32,13 @@ class QueryViewModel(private val repository: PerplexityRepository) : ViewModel()
     abstract class UiState {
         // Idle state: initial state before any verification is requested or after results are dismissed
         object Idle : UiState()
+
         // Loading state: displayed while the API call is in progress (prevents duplicate submissions)
         object Loading : UiState()
+
         // Success state: contains the verification result from the API (rating, summary, citations)
         data class Success(val result: VerificationResult) : UiState()
+
         // Error state: contains the error message to display when verification fails
         data class Error(val message: String) : UiState()
     }
@@ -58,8 +61,8 @@ class QueryViewModel(private val repository: PerplexityRepository) : ViewModel()
             // Try to call the API to verify the claim and save the result to the database
             try {
                 val result = repository.verifyQuery(query)
-                _uiState.value = UiState.Success(result)
                 repository.saveQuery(result)
+                _uiState.value = UiState.Success(result)
                 // If any exceptions occur, update the UI with error message
             } catch (e: Exception) {
                 _uiState.value = UiState.Error(e.message ?: "Unknown error occurred")
@@ -71,4 +74,12 @@ class QueryViewModel(private val repository: PerplexityRepository) : ViewModel()
     fun resetState() {
         _uiState.value = UiState.Idle
     }
+
+    // Function to clear error state (used when user starts editing input after an error)
+    fun clearError() {
+        if (_uiState.value is UiState.Error) {
+            _uiState.value = UiState.Idle
+        }
+    }
 }
+

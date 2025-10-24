@@ -19,6 +19,9 @@ object TrustedSources {
         "plato.stanford.edu",
         "scholarpedia.org",
         "encyclopedia.com",
+        "infoplease.com",
+        "si.edu",
+        "nationalgeographic.com",
 
         // Government/Scientific: CDC, NASA, WHO, NIH, Nature, Science, ScienceDirect, JSTOR
         "cdc.gov",

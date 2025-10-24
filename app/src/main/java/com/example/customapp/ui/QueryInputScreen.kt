@@ -10,7 +10,7 @@
  * - See input validation feedback
  * - Navigate to history
  *
- * The screen manages its own UI state and coordinates with the ViewModel for verification requests.
+ * The screen uses a ViewModel to manage state and business logic, following unidirectional data flow patterns.
  */
 
 package com.example.customapp.ui
@@ -24,22 +24,44 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.customapp.ui.theme.*
+import com.example.customapp.data.PerplexityRepository
+import com.example.customapp.data.model.VerificationResult
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 
 // Composable to display the query input screen
 @Composable
 fun QueryInputScreen(
-    onSubmit: (String) -> Unit,
-    isLoading: Boolean = false,
-    errorMessage: String? = null
+    onNavigateToResult: (VerificationResult) -> Unit,
+    repository: PerplexityRepository
 ) {
+    // Create the ViewModel with the provided repository (simple instantiation, no factory needed)
+    val viewModel = remember { QueryViewModel(repository) }
+    
+    // Observe the UI state from the ViewModel
+    val uiState by viewModel.uiState.collectAsState()
+    
+    // Handle navigation when verification succeeds
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is QueryViewModel.UiState.Success -> {
+                onNavigateToResult((uiState as QueryViewModel.UiState.Success).result)
+            }
+            else -> {}
+        }
+    }
+    
     // State variables for the query input screen
     var query by remember { mutableStateOf("") }
     val maxCharacters = 500
     val charCount = query.length
     var showEmptyError by remember { mutableStateOf(false) }
     var showMaxLengthError by remember { mutableStateOf(false) }
+    
+    // Determine loading and error states from ViewModel
+    val isLoading = uiState is QueryViewModel.UiState.Loading
+    val errorMessage = (uiState as? QueryViewModel.UiState.Error)?.message
 
     // Display the query input screen using a column layout
     Column(
@@ -64,6 +86,7 @@ fun QueryInputScreen(
                     query = newValue
                     showEmptyError = false
                     showMaxLengthError = false
+                    viewModel.clearError()
                 } else {
                     showMaxLengthError = true
                 }
@@ -137,7 +160,7 @@ fun QueryInputScreen(
                 } else if (query.length > maxCharacters) {
                     showMaxLengthError = true
                 } else {
-                    onSubmit(query)
+                    viewModel.verifyQuery(query)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
@@ -188,38 +211,5 @@ fun QueryInputScreen(
 // Previews
 // -------------------------------------------------------------------------------------------------
 
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun QueryInputScreenPreview() {
-    CustomAppTheme {
-        QueryInputScreen(
-            onSubmit = {},
-            isLoading = false,
-            errorMessage = null
-        )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun QueryInputScreenLoadingPreview() {
-    CustomAppTheme {
-        QueryInputScreen(
-            onSubmit = {},
-            isLoading = true,
-            errorMessage = null
-        )
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun QueryInputScreenErrorPreview() {
-    CustomAppTheme {
-        QueryInputScreen(
-            onSubmit = {},
-            isLoading = false,
-            errorMessage = "Network error: Failed to connect to API"
-        )
-    }
-}
+// Note: Preview requires a mock repository - skipping for now as it requires full dependency setup
+// To preview, you can temporarily pass a mock repository or use the old parameter-based approach
