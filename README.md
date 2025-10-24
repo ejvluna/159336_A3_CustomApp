@@ -1,21 +1,5 @@
 **Last Updated**: 23 October 2025
 
-## 📋 Table of Contents
-
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Features](#features)
-- [System Components](#system-components)
-- [Data Flow](#data-flow)
-- [Technology Stack](#technology-stack)
-- [Setup Instructions](#setup-instructions)
-- [Project Structure](#project-structure)
-- [API Integration](#api-integration)
-- [Database Schema](#database-schema)
-- [Building & Running](#building--running)
-
----
-
 ## 🎯 Overview
 
 **<Verifica** is an Android application that helps users verify claims and statements by cross-referencing them against trusted information sources. The app leverages Perplexity's Sonar API to perform fact-checking and provides detailed verification results with citations.
@@ -93,7 +77,7 @@ The app is designed for clean functionality and maintainable approach that follo
 
 ## 🔧 System Components
 
-### Core Components (7 Classes)
+### Core Components (8 Classes)
 
 #### **1. MainActivity**
 - Entry point for the Android application
@@ -110,7 +94,7 @@ The app is designed for clean functionality and maintainable approach that follo
 
 #### **3. HistoryViewModel**
 - Manages history screen state and data
-- Exposes `historyFlow: StateFlow<List<VerificationResult>>`
+- Exposes `history: StateFlow<List<VerificationResult>>`
 - Handles delete operations for history entries
 - Provides reactive updates when database changes
 - Survives configuration changes via ViewModel scope
@@ -143,14 +127,18 @@ The app is designed for clean functionality and maintainable approach that follo
 - Thread-safe initialization with double-checked locking
 - Manages database creation and versioning
 
-### Supporting Classes (Not Counted)
+#### **8. RetrofitClient**
+- Singleton Retrofit instance with OkHttp configuration
+- Configures timeouts, logging, and retry policies
+- Provides `SonarApiService` implementation
 
-**Data Classes:**
-- `VerificationResult`: UI representation of verification response
-- `SonarApiRequest`: API request payload
-- `SonarApiResponse`: API response payload
-- `ClaimHistoryEntity`: Database entity
-- `Rating` enum: Verification status types
+### Supporting Classes (Not Counted): 
+
+**Data Classes: **
+- `VerificationResult`: Simple data class with nested Citation data class (no methods)
+- `SonarApiRequest`: Simple data class with nested Message/ResponseFormat classes (no methods)
+- `SonarApiResponse`: Simple data class with nested SearchResult/Choice/Usage classes (no methods)
+- `ClaimHistoryEntity`: Database entity (Room @Entity)
 
 **Composable Functions:**
 - `QueryInputScreenFull()`: Input and submission UI
@@ -162,7 +150,8 @@ The app is designed for clean functionality and maintainable approach that follo
 
 **Configuration Classes:**
 - `TrustedSources.kt`: Pre-configured domain filter list for API search constraints.
-- Theme files: Material Design 3 styling
+- `ApiConfig.kt`: Configuration object (constants only) for API base URL, endpoints, and model settings.
+- `Color.kt`, `Type.kt`, `Theme.kt`: Material Design 3 theming and styling.
 
 ---
 
@@ -192,7 +181,6 @@ API Request with Domain Filters
 Perplexity Searches Trusted Sources (18 domains):
 ├─ News: Reuters, AP News, NPR, BBC, The Guardian
 ├─ Encyclopedias: Britannica, Stanford, Scholarpedia, Encyclopedia.com
-├─ Fact-Checkers: Snopes, FactCheck.org, PolitiFact
 └─ Government/Scientific: CDC, NASA, WHO, NIH, Nature, Science, ScienceDirect, JSTOR
     ↓
 API Returns JSON Response
@@ -282,7 +270,7 @@ Comprehensive try-catch blocks with specific exception handling for HTTP errors,
 The app implements MVP-level resource management to prevent memory leaks and optimize resource usage:
 - **Coroutine Cleanup**: `DisposableEffect` in `CustomApp()` cancels pending coroutines when the composable is disposed, preventing orphaned API calls
 - **Singleton Pattern**: `RetrofitClient` and `AppDatabase` use lazy initialization to create single instances, enabling connection pooling and preventing resource duplication
-- **Compose Framework Cleanup**: `rememberCoroutineScope()` and `collectAsState()` are automatically cancelled/unsubscribed when composables leave composition
+- **Compose Framework Cleanup**: `rememberCoroutineScope()` and `collectAsState()` are automatically cancelled/unsubscribed when composable leave composition
 - **Stateless Repository**: `PerplexityRepository` holds no resources; API calls are managed by the calling coroutine scope and database operations by Room
 
 ---
@@ -386,30 +374,13 @@ app/
   "messages": [
     {
       "role": "user",
-      "content": "Fact-check the following claim and provide a rating with these definitions:\n- TRUE: The claim is fully supported by credible evidence\n- FALSE: The claim is contradicted by credible evidence\n- MISLEADING: The claim contains some truth but is presented deceptively or lacks important context\n- UNABLE_TO_VERIFY: There is insufficient evidence to verify the claim\n\nProvide a concise summary and detailed explanation with citations from trusted sources.\n\nClaim: [User's claim]"
+      "content": "Analyze the claim using trusted sources and determine its factual rating using the categories defined below.\n\nRATING DEFINITIONS:\n- TRUE: Fully supported by credible evidence.\n- FALSE: Directly contradicted by credible evidence.\n- MISLEADING: Contains partial truths but omits essential context or is presented in a deceptive way.\n- UNABLE_TO_VERIFY: Insufficient or inconclusive evidence is available.\n\nRESPONSE REQUIREMENTS:\n- Provide a concise summary and detailed explanation with citations from trusted sources.\n- For TRUE, FALSE, and MISLEADING ratings, you MUST provide at least 2 credible citations from trusted sources to support your rating. For UNABLE_TO_VERIFY, this is not required as it may not apply.\n- Use clear, neutral, and concise language suitable for general readers, so the reader understands both result and reasoning.\nClaim: [User's claim]"
     }
   ],
   "search_domain_filter": [
-    "reuters.com",
-    "apnews.com",
-    "npr.org",
-    "bbc.com",
-    "theguardian.com",
-    "britannica.com",
-    "plato.stanford.edu",
-    "scholarpedia.org",
-    "encyclopedia.com",
-    "snopes.com",
-    "factcheck.org",
-    "politifact.com",
-    "cdc.gov",
-    "nasa.gov",
-    "who.int",
-    "nih.gov",
-    "nature.com",
-    "sciencemag.org",
-    "sciencedirect.com",
-    "jstor.org"
+    "reuters.com", "apnews.com", "npr.org", "bbc.com", "theguardian.com",
+    "britannica.com", "plato.stanford.edu", "scholarpedia.org", "encyclopedia.com",
+    "cdc.gov", "nasa.gov", "who.int", "nih.gov", "nature.com", "sciencemag.org", "sciencedirect.com", "jstor.org"
   ],
   "response_format": {
     "type": "json_schema",
@@ -441,27 +412,37 @@ app/
 }
 ```
 
-**Response Format**:
+**Response Format** (May 2025 API Update):
 ```json
 {
-  "id": "...",
-  "model": "sonar",
-  "created": 1234567890,
-  "usage": { "prompt_tokens": 42, "completion_tokens": 100 },
+  "id": "unique-request-id",
   "choices": [
     {
       "index": 0,
-      "finish_reason": "stop",
       "message": {
         "role": "assistant",
-        "content": "[Fact-check result]"
-      },
-      "citations": ["https://example.com", "https://source.com"]
+        "content": "{\"rating\": \"TRUE|FALSE|MISLEADING|UNABLE_TO_VERIFY\", \"summary\": \"...\", \"explanation\": \"...\"}"
+      }
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 176,
+    "completion_tokens": 158
+  },
+  "search_results": [
+    {
+      "title": "Source Title",
+      "url": "https://example.com",
+      "date": "2025-10-21"
     }
   ]
 }
 ```
 
+**Key Notes:**
+- The fact-check result (rating, summary, explanation) is embedded as a JSON string within the `content` field
+- Citations are returned in a separate `search_results` array at the root level (not within choices)
+- Each search result includes title, URL, and optional publication date
 
 ---
 
@@ -474,12 +455,11 @@ app/
 data class ClaimHistoryEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val query: String,              // User's original claim
-    val result: String,             // Verification result
-    val status: String,             // TRUE, FALSE, MISLEADING, UNABLE_TO_VERIFY
-    val citations: String,          // JSON array of source URLs
-    val timestamp: Long,            // Query timestamp in milliseconds
-    val summary: String,            // Brief summary
-    val explanation: String         // Detailed explanation
+    val result: String,             // Verification result (TRUE, FALSE, MISLEADING, UNABLE_TO_VERIFY)
+    val summary: String,            // Brief summary from API
+    val explanation: String,        // Detailed explanation from API
+    val citations: String,          // JSON array of citations from API (serialized)
+    val timestamp: Long             // Query timestamp in milliseconds
 )
 ```
 
@@ -520,23 +500,23 @@ data class ClaimHistoryEntity(
 
 ## 📝 External Libraries
 
-| Library | Purpose | Version |
-|---------|---------|---------|
-| Kotlin | Programming language | 2.0.0 |
-| Retrofit 2 | Type-safe HTTP client | 2.11.0 |
-| OkHttp 3 | HTTP client and interceptor | 4.12.0 |
-| Gson | JSON serialization | 2.10.1 |
-| Room | Local database | 2.6.1 |
-| Jetpack Compose | UI framework | 2024.06.00 |
-| Material 3 | Design system | Latest (from BOM) |
-| Kotlin Coroutines | Async programming | 1.8.0 |
-| ViewModel | State management | 2.8.4 |
-| StateFlow | Reactive data | Latest (from BOM) |
-| KSP | Kotlin Symbol Processing | 2.0.0-1.0.22 |
-| Secrets Gradle Plugin | API key management | Latest |
-| JUnit | Unit testing | 4.13.2 |
-| Mockito | Mocking framework | 5.7.0 |
-| Espresso | UI testing | 3.5.1 |
+| Library               | Purpose                     | Version           |
+|-----------------------|-----------------------------|-------------------|
+| Kotlin                | Programming language        | 2.0.0             |
+| Retrofit 2            | Type-safe HTTP client       | 2.11.0            |
+| OkHttp 3              | HTTP client and interceptor | 4.12.0            |
+| Gson                  | JSON serialization          | 2.10.1            |
+| Room                  | Local database              | 2.6.1             |
+| Jetpack Compose       | UI framework                | 2024.06.00        |
+| Material 3            | Design system               | Latest (from BOM) |
+| Kotlin Coroutines     | Async programming           | 1.8.0             |
+| ViewModel             | State management            | 2.8.4             |
+| StateFlow             | Reactive data               | Latest (from BOM) |
+| KSP                   | Kotlin Symbol Processing    | 2.0.0-1.0.22      |
+| Secrets Gradle Plugin | API key management          | Latest            |
+| JUnit                 | Unit testing                | 4.13.2            |
+| Mockito               | Mocking framework           | 5.7.0             |
+| Espresso              | UI testing                  | 3.5.1             |
 
 ---
 
@@ -592,7 +572,7 @@ The app implements comprehensive error handling with specific messages for each 
 
 ## 📄 License
 
-This project is for educational purposes as part of assignment A3.
+This project is for educational purposes as part of a university assignment. 
 
 ---
 

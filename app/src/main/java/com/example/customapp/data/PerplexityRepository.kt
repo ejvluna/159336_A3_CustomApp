@@ -71,7 +71,8 @@ RESPONSE REQUIREMENTS:
 Claim: $query"""
                     )
                 ),
-                model = ApiConfig.MODEL_SONAR,
+                model = ApiConfig.MODEL_SONAR_PRO, // Uncomment to use Sonar-Pro model (more advanced, higher cost)
+                //model = ApiConfig.MODEL_SONAR, // Uncomment to use Sonar model (standard, lower cost)
                 temperature = ApiConfig.DEFAULT_TEMPERATURE,
                 maxTokens = ApiConfig.DEFAULT_MAX_TOKENS,
                 searchDomainFilter = ApiConfig.DEFAULT_SEARCH_DOMAIN_FILTER,
